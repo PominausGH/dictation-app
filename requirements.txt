@@ -1,0 +1,2 @@
+RealtimeSTT>=0.3.100
+pynput>=1.7.6
