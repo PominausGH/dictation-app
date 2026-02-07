@@ -1,33 +1,60 @@
 #!/usr/bin/env python3
 """
 Dictation App for Ubuntu Linux
-Press Ctrl+Shift+D to toggle dictation on/off.
-Speaks into microphone, transcribes with streaming Whisper, types into focused app.
+Press Alt+D to toggle dictation on/off.
+Speaks into microphone, transcribes with Voxtral Transcribe 2, types into focused app.
 """
 
 import subprocess
 import threading
 import sys
-from pynput import keyboard
-from RealtimeSTT import AudioToTextRecorder
-from text_differ import TextDiffer
+import os
+import io
+import wave
+import tempfile
+import evdev
+from evdev import ecodes
+import pyaudio
+import webrtcvad
+from mistralai import Mistral
+
+# Set ydotool socket path for Wayland
+if not os.environ.get('YDOTOOL_SOCKET'):
+    os.environ['YDOTOOL_SOCKET'] = f"/run/user/{os.getuid()}/.ydotool_socket"
+
+# Audio settings
+SAMPLE_RATE = 16000
+CHANNELS = 1
+CHUNK_DURATION_MS = 30  # 30ms chunks for VAD
+CHUNK_SIZE = int(SAMPLE_RATE * CHUNK_DURATION_MS / 1000)
+FORMAT = pyaudio.paInt16
+SILENCE_THRESHOLD = 1.5  # seconds of silence before sending
 
 
 class DictationApp:
     def __init__(self):
-        self.recorder = None
         self.recording = False
-        self.differ = TextDiffer(max_backspaces=20)
         self.lock = threading.Lock()
-        self.differ_lock = threading.Lock()  # Protects self.differ access
-        self.recorder_lock = threading.Lock()  # Protects self.recorder access
-        self.shutdown_flag = False  # Prevents double-shutdown
+        self.shutdown_flag = False
         self.record_thread = None
         self.word_count = 0
 
         # Hotkey state
-        self.ctrl_pressed = False
-        self.shift_pressed = False
+        self.alt_pressed = False
+        self.keyboard_device = None
+
+        # Audio
+        self.audio = None
+        self.stream = None
+        self.vad = webrtcvad.Vad(2)  # Aggressiveness 0-3, 2 is balanced
+
+        # Mistral client
+        api_key = os.environ.get('MISTRAL_API_KEY')
+        if not api_key:
+            print("[ERROR] MISTRAL_API_KEY environment variable not set")
+            print("Get your API key from: https://console.mistral.ai/")
+            sys.exit(1)
+        self.client = Mistral(api_key=api_key)
 
     def type_text(self, text: str) -> bool:
         """Type text into focused application using ydotool.
@@ -58,8 +85,6 @@ class DictationApp:
         if count <= 0:
             return True
         try:
-            # ydotool key command: 14 is backspace keycode
-            # Format: 14:1 = press, 14:0 = release
             for _ in range(count):
                 subprocess.run(
                     ["ydotool", "key", "14:1", "14:0"],
@@ -74,36 +99,51 @@ class DictationApp:
             print("[ERROR] ydotool not found. Run setup.sh first.")
             return False
 
-    def on_realtime_update(self, text: str):
-        """Called when RealtimeSTT has a transcription update."""
-        text = text.strip()
-        if not text:
-            return
-
-        with self.differ_lock:
-            backspaces, new_text = self.differ.calculate_diff(text)
-
-            if backspaces is None:
-                print("[WARN] Skipped large correction")
-                return
-
-            # Apply correction
-            if backspaces > 0:
-                if not self.type_backspaces(backspaces):
-                    return
-
-            if new_text:
-                if self.type_text(new_text):
-                    self.differ.update(text)
-                    self.word_count = len(text.split())
-
     def on_recording_start(self):
         """Called when recording starts."""
-        print("\n[DICTATING] Speak now... (Ctrl+Shift+D to stop)")
+        print("\n[DICTATING] Speak now... (Alt+D to stop)")
 
     def on_recording_stop(self):
         """Called when recording stops."""
-        pass  # Handled in stop_recording
+        pass
+
+    def create_wav_bytes(self, audio_data: bytes) -> bytes:
+        """Convert raw audio bytes to WAV format."""
+        buffer = io.BytesIO()
+        with wave.open(buffer, 'wb') as wf:
+            wf.setnchannels(CHANNELS)
+            wf.setsampwidth(2)  # 16-bit = 2 bytes
+            wf.setframerate(SAMPLE_RATE)
+            wf.writeframes(audio_data)
+        return buffer.getvalue()
+
+    def transcribe_audio(self, audio_data: bytes) -> str:
+        """Send audio to Voxtral API and get transcription."""
+        try:
+            wav_bytes = self.create_wav_bytes(audio_data)
+            
+            # Write to temp file (Mistral SDK needs a file)
+            with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as f:
+                f.write(wav_bytes)
+                temp_path = f.name
+            
+            try:
+                with open(temp_path, 'rb') as audio_file:
+                    result = self.client.audio.transcriptions.complete(
+                        model="mistral-whisper-large",
+                        file={
+                            "file_name": "audio.wav",
+                            "content": audio_file.read(),
+                        },
+                        language="en",
+                    )
+                return result.text.strip() if result.text else ""
+            finally:
+                os.unlink(temp_path)
+                
+        except Exception as e:
+            print(f"[ERROR] Transcription failed: {e}")
+            return ""
 
     def start_recording(self):
         """Start streaming dictation."""
@@ -111,33 +151,27 @@ class DictationApp:
             if self.recording:
                 return
             self.recording = True
-            self.shutdown_flag = False  # Reset shutdown flag for new session
+            self.shutdown_flag = False
 
-        with self.differ_lock:
-            self.differ.reset()
-            self.word_count = 0
+        self.word_count = 0
 
-        # Initialize recorder with streaming enabled
+        # Initialize audio
         try:
-            with self.recorder_lock:
-                self.recorder = AudioToTextRecorder(
-                    model="tiny",
-                    language="en",
-                    device="cpu",
-                    enable_realtime_transcription=True,
-                    realtime_model_type="tiny",
-                    realtime_processing_pause=0.1,
-                    on_realtime_transcription_update=self.on_realtime_update,
-                    on_recording_start=self.on_recording_start,
-                    on_recording_stop=self.on_recording_stop,
-                    silero_sensitivity=0.4,
-                    post_speech_silence_duration=0.4,
-                )
+            self.audio = pyaudio.PyAudio()
+            self.stream = self.audio.open(
+                format=FORMAT,
+                channels=CHANNELS,
+                rate=SAMPLE_RATE,
+                input=True,
+                frames_per_buffer=CHUNK_SIZE
+            )
         except Exception as e:
-            print(f"[ERROR] Failed to initialize recorder: {e}")
+            print(f"[ERROR] Failed to initialize audio: {e}")
             with self.lock:
                 self.recording = False
             return
+
+        self.on_recording_start()
 
         # Start recording in background thread
         self.record_thread = threading.Thread(target=self._record_loop, daemon=True)
@@ -146,47 +180,66 @@ class DictationApp:
     def _record_loop(self):
         """Recording loop that runs in background thread."""
         try:
+            audio_buffer = []
+            silence_chunks = 0
+            speech_detected = False
+            chunks_per_second = 1000 // CHUNK_DURATION_MS
+            silence_chunks_threshold = int(SILENCE_THRESHOLD * chunks_per_second)
+
             while self.recording:
-                # Get recorder reference safely
-                with self.recorder_lock:
-                    recorder = self.recorder
-                if recorder is None:
+                try:
+                    chunk = self.stream.read(CHUNK_SIZE, exception_on_overflow=False)
+                except Exception as e:
+                    print(f"[ERROR] Audio read error: {e}")
                     break
 
-                # text() blocks until speech detected and silence follows
-                # But we mainly use realtime callbacks for typing
-                final_text = recorder.text()
-                if final_text and self.recording:
-                    # Final text - ensure it's fully typed
-                    final_text = final_text.strip()
-                    if final_text:
-                        with self.differ_lock:
-                            backspaces, new_text = self.differ.calculate_diff(final_text)
-                            if backspaces is not None:
-                                self.type_backspaces(backspaces)
-                                if new_text:
-                                    self.type_text(new_text)
-                                self.differ.update(final_text)
+                # Check if chunk contains speech
+                is_speech = self.vad.is_speech(chunk, SAMPLE_RATE)
+
+                if is_speech:
+                    audio_buffer.append(chunk)
+                    silence_chunks = 0
+                    speech_detected = True
+                elif speech_detected:
+                    audio_buffer.append(chunk)
+                    silence_chunks += 1
+
+                    # If enough silence after speech, transcribe
+                    if silence_chunks >= silence_chunks_threshold:
+                        if audio_buffer and self.recording:
+                            audio_data = b''.join(audio_buffer)
+                            text = self.transcribe_audio(audio_data)
+                            if text:
+                                self.type_text(text + " ")
+                                self.word_count += len(text.split())
+                                print(f"[TRANSCRIBED] {text}")
+
+                        # Reset for next utterance
+                        audio_buffer = []
+                        silence_chunks = 0
+                        speech_detected = False
+
         except Exception as e:
             print(f"[ERROR] Recording error: {e}")
         finally:
-            self._shutdown_recorder()
+            self._shutdown_audio()
 
-    def _shutdown_recorder(self):
-        """Safely shutdown the recorder, ensuring it only happens once."""
-        with self.lock:
-            if self.shutdown_flag:
-                return  # Already shut down
-            self.shutdown_flag = True
+    def _shutdown_audio(self):
+        """Safely shutdown audio resources."""
+        if self.stream:
+            try:
+                self.stream.stop_stream()
+                self.stream.close()
+            except Exception:
+                pass
+            self.stream = None
 
-        with self.recorder_lock:
-            if self.recorder:
-                try:
-                    self.recorder.shutdown()
-                except Exception as e:
-                    print(f"[WARN] Error during recorder shutdown: {e}")
-                finally:
-                    self.recorder = None
+        if self.audio:
+            try:
+                self.audio.terminate()
+            except Exception:
+                pass
+            self.audio = None
 
     def stop_recording(self):
         """Stop streaming dictation."""
@@ -197,7 +250,7 @@ class DictationApp:
 
         print(f"[DONE] Typed {self.word_count} words")
 
-        # Wait for record thread to finish (with timeout)
+        # Wait for record thread to finish
         if self.record_thread and self.record_thread.is_alive():
             self.record_thread.join(timeout=5.0)
             if self.record_thread.is_alive():
@@ -210,22 +263,56 @@ class DictationApp:
         else:
             self.start_recording()
 
-    def on_press(self, key):
-        """Handle key press events."""
-        if key == keyboard.Key.ctrl_l or key == keyboard.Key.ctrl_r:
-            self.ctrl_pressed = True
-        elif key == keyboard.Key.shift_l or key == keyboard.Key.shift_r:
-            self.shift_pressed = True
-        elif hasattr(key, 'char') and key.char == 'd':
-            if self.ctrl_pressed and self.shift_pressed:
-                threading.Thread(target=self.toggle_recording).start()
+    def find_keyboard_device(self):
+        """Find a keyboard device from /dev/input/."""
+        devices = [evdev.InputDevice(path) for path in evdev.list_devices()]
 
-    def on_release(self, key):
-        """Handle key release events."""
-        if key == keyboard.Key.ctrl_l or key == keyboard.Key.ctrl_r:
-            self.ctrl_pressed = False
-        elif key == keyboard.Key.shift_l or key == keyboard.Key.shift_r:
-            self.shift_pressed = False
+        # Prefer MX Keys keyboard
+        for device in devices:
+            if "MX Keys" in device.name and "Mouse" not in device.name:
+                capabilities = device.capabilities()
+                if ecodes.EV_KEY in capabilities:
+                    keys = capabilities[ecodes.EV_KEY]
+                    if ecodes.KEY_D in keys:
+                        return device
+
+        # Fallback to any keyboard with D and Alt keys
+        for device in devices:
+            capabilities = device.capabilities()
+            if ecodes.EV_KEY in capabilities:
+                keys = capabilities[ecodes.EV_KEY]
+                if ecodes.KEY_D in keys and ecodes.KEY_LEFTALT in keys:
+                    return device
+        return None
+
+    def keyboard_listener(self):
+        """Listen for keyboard events using evdev (works on Wayland)."""
+        device = self.find_keyboard_device()
+        if not device:
+            print("[ERROR] No keyboard device found. Make sure you're in the 'input' group.")
+            return
+
+        print(f"[INFO] Using keyboard: {device.name}")
+        self.keyboard_device = device
+
+        try:
+            for event in device.read_loop():
+                if event.type == ecodes.EV_KEY:
+                    key_event = evdev.categorize(event)
+
+                    # Track Alt key state
+                    if key_event.scancode in (ecodes.KEY_LEFTALT, ecodes.KEY_RIGHTALT):
+                        if key_event.keystate == key_event.key_down:
+                            self.alt_pressed = True
+                        elif key_event.keystate == key_event.key_up:
+                            self.alt_pressed = False
+
+                    # Check for D key press while Alt is held
+                    elif key_event.scancode == ecodes.KEY_D:
+                        if key_event.keystate == key_event.key_down and self.alt_pressed:
+                            threading.Thread(target=self.toggle_recording).start()
+        except Exception as e:
+            print(f"[ERROR] Keyboard listener error: {e}")
 
     def check_ydotool(self) -> bool:
         """Check if ydotool is available and working."""
@@ -243,7 +330,7 @@ class DictationApp:
         """Run the dictation app."""
         print("=" * 50)
         print("       DICTATION APP FOR UBUNTU")
-        print("         (Streaming Mode)")
+        print("       (Voxtral Transcribe 2)")
         print("=" * 50)
         print()
 
@@ -254,25 +341,20 @@ class DictationApp:
             print("Run: sudo ydotoold &")
             sys.exit(1)
 
-        print("Ready! Press Ctrl+Shift+D to toggle dictation.")
+        print("Ready! Press Alt+D to toggle dictation.")
         print("Press Ctrl+C to exit.")
         print()
 
-        # Start keyboard listener
-        with keyboard.Listener(
-            on_press=self.on_press,
-            on_release=self.on_release
-        ) as listener:
-            try:
-                listener.join()
-            except KeyboardInterrupt:
-                print("\nExiting...")
-                with self.lock:
-                    self.recording = False
-                self._shutdown_recorder()
-                # Wait for record thread to finish
-                if self.record_thread and self.record_thread.is_alive():
-                    self.record_thread.join(timeout=5.0)
+        # Start keyboard listener using evdev (works on Wayland)
+        try:
+            self.keyboard_listener()
+        except KeyboardInterrupt:
+            print("\nExiting...")
+            with self.lock:
+                self.recording = False
+            self._shutdown_audio()
+            if self.record_thread and self.record_thread.is_alive():
+                self.record_thread.join(timeout=5.0)
 
 
 def main():
