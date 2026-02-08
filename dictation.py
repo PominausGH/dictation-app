@@ -16,7 +16,11 @@ import evdev
 from evdev import ecodes
 import pyaudio
 import webrtcvad
+from dotenv import load_dotenv
 from mistralai import Mistral
+
+# Load .env file from same directory as script
+load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env'))
 
 # Set ydotool socket path for Wayland
 if not os.environ.get('YDOTOOL_SOCKET'):
