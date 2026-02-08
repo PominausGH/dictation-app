@@ -2,25 +2,19 @@
 """
 Dictation App for Ubuntu Linux
 Press Alt+D to toggle dictation on/off.
-Speaks into microphone, transcribes with Voxtral Transcribe 2, types into focused app.
+Speaks into microphone, transcribes with faster-whisper, types into focused app.
 """
 
 import subprocess
 import threading
 import sys
 import os
-import io
-import wave
-import tempfile
+import numpy as np
 import evdev
 from evdev import ecodes
 import pyaudio
 import webrtcvad
-from dotenv import load_dotenv
-from mistralai import Mistral
-
-# Load .env file from same directory as script
-load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env'))
+from faster_whisper import WhisperModel
 
 # Set ydotool socket path for Wayland
 if not os.environ.get('YDOTOOL_SOCKET'):
@@ -52,13 +46,10 @@ class DictationApp:
         self.stream = None
         self.vad = webrtcvad.Vad(2)  # Aggressiveness 0-3, 2 is balanced
 
-        # Mistral client
-        api_key = os.environ.get('MISTRAL_API_KEY')
-        if not api_key:
-            print("[ERROR] MISTRAL_API_KEY environment variable not set")
-            print("Get your API key from: https://console.mistral.ai/")
-            sys.exit(1)
-        self.client = Mistral(api_key=api_key)
+        # Whisper model
+        print("[INFO] Loading Whisper model (first run downloads ~1GB)...")
+        self.whisper = WhisperModel("base.en", device="cpu", compute_type="int8")
+        print("[INFO] Model loaded.")
 
     def type_text(self, text: str) -> bool:
         """Type text into focused application using ydotool.
@@ -111,40 +102,15 @@ class DictationApp:
         """Called when recording stops."""
         pass
 
-    def create_wav_bytes(self, audio_data: bytes) -> bytes:
-        """Convert raw audio bytes to WAV format."""
-        buffer = io.BytesIO()
-        with wave.open(buffer, 'wb') as wf:
-            wf.setnchannels(CHANNELS)
-            wf.setsampwidth(2)  # 16-bit = 2 bytes
-            wf.setframerate(SAMPLE_RATE)
-            wf.writeframes(audio_data)
-        return buffer.getvalue()
-
     def transcribe_audio(self, audio_data: bytes) -> str:
-        """Send audio to Voxtral API and get transcription."""
+        """Transcribe audio using faster-whisper locally."""
         try:
-            wav_bytes = self.create_wav_bytes(audio_data)
-            
-            # Write to temp file (Mistral SDK needs a file)
-            with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as f:
-                f.write(wav_bytes)
-                temp_path = f.name
-            
-            try:
-                with open(temp_path, 'rb') as audio_file:
-                    result = self.client.audio.transcriptions.complete(
-                        model="mistral-whisper-large",
-                        file={
-                            "file_name": "audio.wav",
-                            "content": audio_file.read(),
-                        },
-                        language="en",
-                    )
-                return result.text.strip() if result.text else ""
-            finally:
-                os.unlink(temp_path)
-                
+            # Convert raw bytes to float32 numpy array
+            audio_np = np.frombuffer(audio_data, dtype=np.int16).astype(np.float32) / 32768.0
+
+            segments, _ = self.whisper.transcribe(audio_np, language="en", beam_size=1)
+            text = " ".join(seg.text.strip() for seg in segments)
+            return text.strip()
         except Exception as e:
             print(f"[ERROR] Transcription failed: {e}")
             return ""
@@ -334,7 +300,7 @@ class DictationApp:
         """Run the dictation app."""
         print("=" * 50)
         print("       DICTATION APP FOR UBUNTU")
-        print("       (Voxtral Transcribe 2)")
+        print("       (faster-whisper)")
         print("=" * 50)
         print()
 

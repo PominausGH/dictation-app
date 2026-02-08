@@ -1,5 +1,5 @@
-mistralai>=1.0.0
+faster-whisper>=1.0.0
+numpy
 pyaudio>=0.2.14
 evdev>=1.6.0
 webrtcvad>=2.0.10
-python-dotenv>=1.0.0
