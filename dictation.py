@@ -7,6 +7,7 @@ Speaks into microphone, transcribes with faster-whisper, types into focused app.
 
 import subprocess
 import threading
+import queue
 import sys
 import os
 import numpy as np
@@ -46,23 +47,32 @@ class DictationApp:
         self.stream = None
         self.vad = webrtcvad.Vad(2)  # Aggressiveness 0-3, 2 is balanced
 
+        # Typing queue — ensures text is pasted sequentially
+        self.text_queue = queue.Queue()
+        self.type_thread = threading.Thread(target=self._type_loop, daemon=True)
+        self.type_thread.start()
+
         # Whisper model
         print("[INFO] Loading Whisper model (first run downloads ~1GB)...")
         self.whisper = WhisperModel("base.en", device="cpu", compute_type="int8")
         print("[INFO] Model loaded.")
 
-    def type_text(self, text: str) -> bool:
-        """Type text into focused application using ydotool.
+    def _type_loop(self):
+        """Dedicated thread that types text sequentially from the queue."""
+        while True:
+            text = self.text_queue.get()
+            if text is None:
+                break
+            self._do_type(text)
 
-        Returns True on success, False on failure.
-        """
+    def _do_type(self, text: str) -> bool:
+        """Type text using ydotool with --key-delay 0 for fast output."""
         if not text:
             return True
         try:
             subprocess.run(
-                ["ydotool", "type", "--", text],
-                check=True,
-                capture_output=True
+                ["ydotool", "type", "--key-delay", "0", "--", text],
+                check=True, capture_output=True
             )
             return True
         except subprocess.CalledProcessError as e:
@@ -72,27 +82,12 @@ class DictationApp:
             print("[ERROR] ydotool not found. Run setup.sh first.")
             return False
 
-    def type_backspaces(self, count: int) -> bool:
-        """Type backspace keys using ydotool.
-
-        Returns True on success, False on failure.
-        """
-        if count <= 0:
+    def type_text(self, text: str) -> bool:
+        """Queue text for typing. Returns True immediately."""
+        if not text:
             return True
-        try:
-            for _ in range(count):
-                subprocess.run(
-                    ["ydotool", "key", "14:1", "14:0"],
-                    check=True,
-                    capture_output=True
-                )
-            return True
-        except subprocess.CalledProcessError as e:
-            print(f"[ERROR] Failed to backspace: {e}")
-            return False
-        except FileNotFoundError:
-            print("[ERROR] ydotool not found. Run setup.sh first.")
-            return False
+        self.text_queue.put(text)
+        return True
 
     def on_recording_start(self):
         """Called when recording starts."""
@@ -233,54 +228,57 @@ class DictationApp:
         else:
             self.start_recording()
 
-    def find_keyboard_device(self):
-        """Find a keyboard device from /dev/input/."""
-        devices = [evdev.InputDevice(path) for path in evdev.list_devices()]
-
-        # Prefer MX Keys keyboard
-        for device in devices:
-            if "MX Keys" in device.name and "Mouse" not in device.name:
-                capabilities = device.capabilities()
-                if ecodes.EV_KEY in capabilities:
-                    keys = capabilities[ecodes.EV_KEY]
-                    if ecodes.KEY_D in keys:
-                        return device
-
-        # Fallback to any keyboard with D and Alt keys
-        for device in devices:
+    def find_keyboard_devices(self):
+        """Find all keyboard devices from /dev/input/."""
+        keyboards = []
+        # Skip virtual/daemon devices to avoid feedback loops
+        skip = ("ydotool", "RustDesk")
+        for path in evdev.list_devices():
+            device = evdev.InputDevice(path)
+            if any(s in device.name for s in skip):
+                continue
             capabilities = device.capabilities()
             if ecodes.EV_KEY in capabilities:
                 keys = capabilities[ecodes.EV_KEY]
                 if ecodes.KEY_D in keys and ecodes.KEY_LEFTALT in keys:
-                    return device
-        return None
+                    keyboards.append(device)
+        return keyboards
 
     def keyboard_listener(self):
-        """Listen for keyboard events using evdev (works on Wayland)."""
-        device = self.find_keyboard_device()
-        if not device:
-            print("[ERROR] No keyboard device found. Make sure you're in the 'input' group.")
+        """Listen for keyboard events on all keyboards using evdev."""
+        import selectors
+
+        keyboards = self.find_keyboard_devices()
+        if not keyboards:
+            print("[ERROR] No keyboard devices found. Make sure you're in the 'input' group.")
             return
 
-        print(f"[INFO] Using keyboard: {device.name}")
-        self.keyboard_device = device
+        for kb in keyboards:
+            print(f"[INFO] Listening on keyboard: {kb.name}")
+
+        sel = selectors.DefaultSelector()
+        for kb in keyboards:
+            sel.register(kb, selectors.EVENT_READ)
 
         try:
-            for event in device.read_loop():
-                if event.type == ecodes.EV_KEY:
-                    key_event = evdev.categorize(event)
+            while True:
+                for key, mask in sel.select():
+                    device = key.fileobj
+                    for event in device.read():
+                        if event.type == ecodes.EV_KEY:
+                            key_event = evdev.categorize(event)
 
-                    # Track Alt key state
-                    if key_event.scancode in (ecodes.KEY_LEFTALT, ecodes.KEY_RIGHTALT):
-                        if key_event.keystate == key_event.key_down:
-                            self.alt_pressed = True
-                        elif key_event.keystate == key_event.key_up:
-                            self.alt_pressed = False
+                            # Track Alt key state
+                            if key_event.scancode in (ecodes.KEY_LEFTALT, ecodes.KEY_RIGHTALT):
+                                if key_event.keystate == key_event.key_down:
+                                    self.alt_pressed = True
+                                elif key_event.keystate == key_event.key_up:
+                                    self.alt_pressed = False
 
-                    # Check for D key press while Alt is held
-                    elif key_event.scancode == ecodes.KEY_D:
-                        if key_event.keystate == key_event.key_down and self.alt_pressed:
-                            threading.Thread(target=self.toggle_recording).start()
+                            # Check for D key press while Alt is held
+                            elif key_event.scancode == ecodes.KEY_D:
+                                if key_event.keystate == key_event.key_down and self.alt_pressed:
+                                    threading.Thread(target=self.toggle_recording).start()
         except Exception as e:
             print(f"[ERROR] Keyboard listener error: {e}")
 
@@ -289,8 +287,7 @@ class DictationApp:
         try:
             subprocess.run(
                 ["ydotool", "--help"],
-                check=True,
-                capture_output=True
+                check=True, capture_output=True
             )
             return True
         except (subprocess.CalledProcessError, FileNotFoundError):
