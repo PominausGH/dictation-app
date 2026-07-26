@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://analytics.daintytrading.com; connect-src 'self' https://analytics.daintytrading.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'">
+<title>Does Local Voice Dictation Work as Well as Cloud Tools? | Voxtty</title>
+<meta name="description" content="On-device Whisper models match cloud dictation for clear speech but lag on heavy accents, noise, and jargon — here's the honest breakdown.">
+<link rel="canonical" href="https://voxtty.com/blog/local-voice-dictation-vs-cloud-tools/">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎙️</text></svg>">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Does Local Voice Dictation Work as Well as Cloud Tools?">
+<meta property="og:description" content="On-device Whisper models match cloud dictation for clear speech but lag on heavy accents, noise, and jargon — here's the honest breakdown.">
+<meta property="og:url" content="https://voxtty.com/blog/local-voice-dictation-vs-cloud-tools/">
+<meta property="article:published_time" content="2026-07-26">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Does Local Voice Dictation Work as Well as Cloud Tools?",
+  "description": "On-device Whisper models match cloud dictation for clear speech but lag on heavy accents, noise, and jargon — here's the honest breakdown.",
+  "url": "https://voxtty.com/blog/local-voice-dictation-vs-cloud-tools/",
+  "datePublished": "2026-07-26",
+  "author": { "@type": "Organization", "name": "Voxtty", "url": "https://voxtty.com" },
+  "publisher": { "@type": "Organization", "name": "Voxtty", "url": "https://voxtty.com" }
+}
+</script>
+<style>
+  :root {
+    --ground:#0B0E14; --surface:#12161F; --surface-2:#1A202B;
+    --ink:#E9EDF3; --muted:#9BA7B6; --faint:#8892A2; --border:#232B38;
+    --accent:#FF6A5A; --accent-ink:#FF8578; --accent-soft:#2A1613;
+    --teal:#43B8B2;
+    --mono:ui-monospace,"SF Mono","JetBrains Mono","Fira Code",Menlo,Consolas,monospace;
+    --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --shadow:0 2px 6px rgba(0,0,0,.3), 0 20px 50px rgba(0,0,0,.4);
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --ground:#F2F4F7; --surface:#FFFFFF; --surface-2:#F9FAFB;
+      --ink:#14181F; --muted:#57616E; --faint:#66707E; --border:#E2E6EC;
+      --accent:#DE4E3B; --accent-ink:#B63C2C; --accent-soft:#FBE6E1;
+      --teal:#0E7C7B;
+      --shadow:0 1px 2px rgba(20,30,45,.05), 0 16px 40px rgba(20,30,45,.09);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:#0B0E14; --surface:#12161F; --surface-2:#1A202B;
+    --ink:#E9EDF3; --muted:#9BA7B6; --faint:#8892A2; --border:#232B38;
+    --accent:#FF6A5A; --accent-ink:#FF8578; --accent-soft:#2A1613; --teal:#43B8B2;
+    --shadow:0 2px 6px rgba(0,0,0,.3), 0 20px 50px rgba(0,0,0,.4);
+  }
+  :root[data-theme="light"] {
+    --ground:#F2F4F7; --surface:#FFFFFF; --surface-2:#F9FAFB;
+    --ink:#14181F; --muted:#57616E; --faint:#66707E; --border:#E2E6EC;
+    --accent:#DE4E3B; --accent-ink:#B63C2C; --accent-soft:#FBE6E1; --teal:#0E7C7B;
+    --shadow:0 1px 2px rgba(20,30,45,.05), 0 16px 40px rgba(20,30,45,.09);
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--ground); color:var(--ink); font-family:var(--sans);
+    line-height:1.6; -webkit-font-smoothing:antialiased; }
+  a { color:inherit; }
+  .wrap { max-width:760px; margin:0 auto; padding:0 clamp(18px,4vw,36px); }
+  nav { display:flex; align-items:center; justify-content:space-between; padding:20px 0;
+    border-bottom:1px solid var(--border); max-width:1060px; margin:0 auto; padding-left:clamp(18px,4vw,36px); padding-right:clamp(18px,4vw,36px); }
+  .brand { font-family:var(--mono); font-size:19px; font-weight:600; letter-spacing:-.01em; text-decoration:none; color:var(--ink); }
+  .brand .cursor { display:inline-block; width:.6ch; color:var(--accent); }
+  .navlinks { display:flex; gap:22px; align-items:center; font-size:14px; }
+  .navlinks a { color:var(--muted); text-decoration:none; }
+  .navlinks a:hover, .navlinks a.active { color:var(--ink); }
+  .ghbtn { font-family:var(--mono); font-size:13px; border:1px solid var(--border);
+    border-radius:8px; padding:7px 13px; color:var(--ink); text-decoration:none; background:var(--surface); }
+  .breadcrumb { font-family:var(--mono); font-size:12.5px; color:var(--faint); margin:40px 0 18px; }
+  .breadcrumb a { color:var(--faint); }
+  .breadcrumb a:hover { color:var(--muted); }
+  .tag { display:inline-block; font-family:var(--mono); font-size:12px; color:var(--accent-ink);
+    background:var(--accent-soft); border-radius:999px; padding:4px 11px; margin-bottom:16px; }
+  h1 { font-size:clamp(28px,4.6vw,42px); line-height:1.1; letter-spacing:-.03em; margin:0 0 18px;
+    font-weight:700; text-wrap:balance; }
+  .meta { font-family:var(--mono); font-size:13px; color:var(--faint); display:flex; gap:16px; margin-bottom:44px; }
+  .body { padding-bottom:64px; }
+  .body p { color:var(--muted); font-size:17px; line-height:1.8; margin:0 0 22px; }
+  .body h2 { font-size:1.4rem; font-weight:700; letter-spacing:-.02em; margin:42px 0 14px; color:var(--ink); }
+  .body h3 { font-size:1.1rem; font-weight:600; margin:28px 0 10px; color:var(--ink); }
+  .body ul, .body ol { margin:0 0 22px 22px; color:var(--muted); font-size:17px; line-height:1.8; }
+  .body li { margin-bottom:8px; }
+  .body strong { color:var(--ink); font-weight:600; }
+  .body a { color:var(--accent-ink); }
+  .body a:hover { text-decoration:underline; }
+  .body blockquote { border-left:3px solid var(--accent); padding-left:20px; margin:28px 0; color:var(--faint); font-style:italic; }
+  .body code { font-family:var(--mono); font-size:.9em; background:var(--surface-2); padding:2px 6px; border-radius:4px; }
+  .cta { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:28px;
+    margin:16px 0 48px; box-shadow:var(--shadow); }
+  .cta h3 { margin:0 0 8px; font-size:18px; }
+  .cta p { color:var(--muted); margin:0 0 18px; font-size:15px; }
+  .btn { font-family:var(--mono); font-size:14px; font-weight:600; text-decoration:none;
+    border-radius:10px; padding:11px 18px; display:inline-flex; align-items:center; gap:9px;
+    background:#CE3E2B; color:#fff; }
+  .btn:hover { filter:brightness(1.06); }
+  .back-link { display:inline-flex; align-items:center; gap:6px; color:var(--faint); font-family:var(--mono);
+    font-size:13px; text-decoration:none; }
+  .back-link:hover { color:var(--muted); }
+  footer { border-top:1px solid var(--border); padding:36px 0 56px; max-width:1060px; margin:0 auto; }
+  footer .wrap { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:16px; padding:0 clamp(18px,4vw,36px); }
+  footer .brand { font-size:16px; }
+  footer .meta { font-family:var(--mono); font-size:12.5px; color:var(--faint); }
+  footer a { color:var(--muted); text-decoration:none; font-size:14px; }
+  footer a:hover { color:var(--ink); }
+  @media(max-width:700px) { .navlinks .hide { display:none; } }
+</style>
+</head>
+<body>
+<nav>
+  <a href="/" class="brand">voxtty<span class="cursor">.</span></a>
+  <div class="navlinks">
+    <a href="/blog/" class="active">Blog</a>
+    <a href="/#pricing" class="hide">Pricing</a>
+    <a class="ghbtn" href="https://github.com/PominausGH/voxtty">GitHub ↗</a>
+  </div>
+</nav>
+
+<div class="wrap">
+  <div class="breadcrumb"><a href="/blog/">Blog</a> / Comparisons</div>
+  <span class="tag">Comparisons</span>
+  <h1>Does Local Voice Dictation Work as Well as Cloud Tools?</h1>
+  <div class="meta">
+    <span>26 July 2026</span>
+    <span>4 min read</span>
+  </div>
+
+  <div class="body">
+    <p>For clear speech in a normal room, on-device Whisper models get close to cloud dictation accuracy — the gap widens fast with strong accents, background noise, or dense technical jargon. If you talk in short, plain sentences at a normal pace, a local small or medium Whisper model will transcribe about as well as Google's cloud STT or Otter. If you mumble acronyms in a noisy office, cloud tools still have an edge, because they run bigger models against more compute than your laptop has.</p>
+
+<h2>Why the comparison actually matters</h2>
+<p>Cloud dictation tools (Google's live transcribe, Otter, Windows Speech, Apple Dictation) send your raw audio to a remote server for processing. That's not a hypothetical privacy concern — it's a literal one: your voice, and whatever you say while dictating, transits and briefly lives on someone else's infrastructure before you get text back.</p>
+<p>There's also a practical failure mode that has nothing to do with privacy: network dependency. Cloud STT needs a round trip to a server for every utterance. If your connection is slow, congested, or down, dictation either stalls or stops working entirely. On-device transcription has no such dependency — it runs whether or not you have a network at all, and there's no per-minute API cost accumulating while you talk.</p>
+
+<h2>How the local approach actually works</h2>
+<p>faster-whisper — a reimplementation of OpenAI's Whisper models optimized for CPU and GPU inference — is what most Linux dictation tools use under the hood, Voxtty included. Audio is captured locally, voice activity detection (VAD) trims the silence around your speech so the model isn't wasting cycles transcribing dead air, and the resulting audio segment goes straight into the local Whisper model. No audio leaves the machine at any point.</p>
+<p>The output then gets typed into whatever window has focus via <code>ydotool</code>, which works at the input-device level rather than through app-specific integrations — meaning it doesn't care whether you're in a terminal, a browser text field, or a chat client. On Wayland specifically, this matters: older X11-only automation tools don't work, so <code>ydotool</code>'s device-level approach is effectively required, not just convenient.</p>
+<p>Model size is the real lever here, not some hidden trick. Whisper's tiny model is fast enough to feel instant but makes more errors on uncommon words. Small strikes a reasonable balance for everyday dictation. Medium is noticeably more accurate — closer to what cloud tools produce — but costs more CPU time and RAM, so transcription takes longer to return. There's no free lunch: you're trading latency for accuracy, and which side of that trade you want depends on whether you're dictating a quick Slack reply or a paragraph of documentation you don't want to proofread.</p>
+<p>Voxtty is built around this tradeoff directly: press Alt+D, speak, and faster-whisper transcribes on-device using whichever model size you've picked. An optional, opt-in cleanup step can send the transcript text — never the audio — to the Claude API to strip filler words, but that stays off by default, and the core dictation path never touches the network. If you want to try the actual tradeoff for yourself rather than take a blog post's word for it, <a href="https://voxtty.com">Try Voxtty free</a>.</p>
+
+<h2>Where local transcription genuinely falls short</h2>
+<p>Be honest about the limits: heavy or unfamiliar accents are where local Whisper models struggle most, especially at smaller sizes — cloud models trained on vastly larger, more diverse datasets and backed by more compute handle accent variation better. Loud or echo-heavy rooms degrade accuracy for both approaches, but cloud services can sometimes apply heavier noise-suppression preprocessing than a local model has the compute budget for.</p>
+<p>Dense technical jargon — codebase-specific terms, chemical names, uncommon proper nouns — trips up smaller Whisper models more than general cloud STT, which often benefits from broader language model context. And anything voice-activated, like a wake word instead of a hotkey, is still experimental technology industry-wide; false triggers and missed activations are a known rough edge, not a Linux-specific one.</p>
+
+<h2>One thing to do today</h2>
+<p>Open a terminal, check whether <code>ydotool</code> is packaged for your distro (<code>apt search ydotool</code> or your package manager's equivalent), and dictate a single paragraph of plain, ordinary sentences — not jargon, not mumbling — to see what a small Whisper model actually produces before you judge the tradeoff on unfair terms.</p>
+
+    <div class="cta">
+      <h3>Try Voxtty free</h3>
+      <p>Local-first voice dictation for Linux. Press Alt+D, speak, and your words land in whatever app has focus — nothing leaves your machine.</p>
+      <a href="https://voxtty.com" class="btn">Try Voxtty free →</a>
+    </div>
+
+    <a href="/blog/" class="back-link">← Back to blog</a>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <div class="brand">voxtty<span class="cursor">.</span></div>
+    <a href="https://github.com/PominausGH/voxtty">GitHub ↗</a>
+    <a href="/privacy.html">Privacy</a>
+    <span class="meta">local-first · linux-native · open-core</span>
+  </div>
+</footer>
+</body>
+</html>
