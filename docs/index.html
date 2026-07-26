@@ -6,9 +6,18 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://analytics.daintytrading.com; connect-src 'self' https://analytics.daintytrading.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'">
 <title>Voxtty — voice dictation for Linux</title>
 <meta name="description" content="Voxtty is a private, local-first voice keyboard for Linux. Press a key, speak, and your words land in any app — transcribed on your own machine.">
+<link rel="canonical" href="https://voxtty.com/">
 <meta property="og:title" content="Voxtty — voice dictation for Linux">
-<meta property="og:description" content="Private, local-first voice dictation for Linux. Your voice never leaves your machine.">
+<meta property="og:description" content="Voxtty is a private, local-first voice keyboard for Linux. Press a key, speak, and your words land in any app — transcribed on your own machine.">
 <meta property="og:type" content="website">
+<meta property="og:url" content="https://voxtty.com/">
+<meta property="og:image" content="https://voxtty.com/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Voxtty — voice dictation for Linux">
+<meta name="twitter:description" content="Voxtty is a private, local-first voice keyboard for Linux. Press a key, speak, and your words land in any app — transcribed on your own machine.">
+<meta name="twitter:image" content="https://voxtty.com/og-image.png">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎙️</text></svg>">
 <style>
   :root {
@@ -194,6 +203,86 @@
   }
 </style>
 <script defer src="https://analytics.daintytrading.com/script.js" data-website-id="099e1ed5-172c-4743-bffc-1b07678b2611"></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Voxtty",
+  "url": "https://voxtty.com/",
+  "description": "Voxtty is a private, local-first voice keyboard for Linux. Press a key, speak, and your words land in any app — transcribed on your own machine.",
+  "applicationCategory": "UtilitiesApplication",
+  "operatingSystem": "Linux",
+  "offers": [
+    {
+      "@type": "Offer",
+      "name": "Free",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    {
+      "@type": "Offer",
+      "name": "Pro",
+      "price": "5",
+      "priceCurrency": "USD",
+      "priceSpecification": {
+        "@type": "UnitPriceSpecification",
+        "price": "5",
+        "priceCurrency": "USD",
+        "billingIncrement": 1,
+        "unitCode": "MON"
+      }
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Does my voice go to the cloud?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. Transcription runs entirely on your machine. The only thing that can leave is text — and only if you opt into AI cleanup. Leave it off and Voxtty is fully offline."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does it work without internet?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. Everything except the optional AI cleanup runs locally, so dictation works on a plane or off the grid."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Which apps can I dictate into?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Any of them. If you can type in it, Voxtty can type in it — editors, browsers, chat, terminals."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is it really free?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The core app is free and open source. Pro (AI cleanup, per-app formatting, a GUI, cross-platform builds) is $5/month or $50/year. AI cleanup runs on your own API key, so your usage stays yours and costs pennies."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Windows or macOS?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Linux first. Native Windows and macOS builds are on the roadmap for Pro."
+      }
+    }
+  ]
+}
+</script>
 </head>
 <body>
 <div class="wrap">
@@ -388,6 +477,7 @@
   <div class="wrap">
     <div class="brand">voxtty<span class="cursor">.</span></div>
     <a href="https://github.com/PominausGH/voxtty">GitHub ↗</a>
+    <a href="/privacy.html">Privacy</a>
     <span class="meta">local-first · linux-native · open-core</span>
   </div>
 </footer>
