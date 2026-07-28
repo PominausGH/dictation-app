@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://analytics.daintytrading.com; connect-src 'self' https://analytics.daintytrading.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://analytics.daintytrading.com; connect-src 'self' https://analytics.daintytrading.com https://api.github.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'">
 <title>Voxtty — voice dictation for Linux</title>
 <meta name="description" content="Voxtty is a private, local-first voice keyboard for Linux. Press a key, speak, and your words land in any app — transcribed on your own machine.">
 <link rel="canonical" href="https://voxtty.com/">
@@ -77,6 +77,8 @@
   .navlinks a:hover { color:var(--ink); }
   .ghbtn { font-family:var(--mono); font-size:13px; border:1px solid var(--border);
     border-radius:8px; padding:7px 13px; color:var(--ink); text-decoration:none; background:var(--surface); }
+  .star-badge { font-family:var(--mono); font-size:12.5px; color:var(--teal); border:1px solid var(--border);
+    border-radius:999px; padding:5px 11px; white-space:nowrap; }
 
   /* Hero */
   .hero { display:grid; grid-template-columns:1.05fr .95fr; gap:clamp(28px,5vw,56px); align-items:center;
@@ -203,6 +205,7 @@
   }
 </style>
 <script defer src="https://analytics.daintytrading.com/script.js" data-website-id="099e1ed5-172c-4743-bffc-1b07678b2611"></script>
+<script defer src="/star-badge.js"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -294,6 +297,7 @@
       <a href="#pricing" class="hide">Pricing</a>
       <a href="/blog/">Blog</a>
       <a class="ghbtn" href="https://github.com/PominausGH/voxtty">GitHub ↗</a>
+      <span class="star-badge" data-star-badge hidden>★ <span data-star-count>0</span></span>
     </div>
   </nav>
 </div>
@@ -479,7 +483,9 @@
     <div class="brand">voxtty<span class="cursor">.</span></div>
     <a href="https://github.com/PominausGH/voxtty">GitHub ↗</a>
     <a href="/blog/">Blog</a>
+    <a href="https://github.com/PominausGH/voxtty/issues">Support</a>
     <a href="/privacy.html">Privacy</a>
+    <a href="/terms.html">Terms</a>
     <span class="meta">local-first · linux-native · open-core</span>
   </div>
 </footer>

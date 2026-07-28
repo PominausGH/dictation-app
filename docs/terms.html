@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://analytics.daintytrading.com; connect-src 'self' https://analytics.daintytrading.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'">
-<title>Privacy — Voxtty</title>
-<meta name="description" content="What Voxtty does and doesn't do with your voice, your text, and your usage of this website — in plain language.">
-<link rel="canonical" href="https://voxtty.com/privacy.html">
+<title>Terms — Voxtty</title>
+<meta name="description" content="The terms for using Voxtty's open-source software and this website, in plain language.">
+<link rel="canonical" href="https://voxtty.com/terms.html">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎙️</text></svg>">
 <style>
   :root {
@@ -58,33 +58,36 @@
 </nav>
 <main>
   <div class="wrap">
-    <h1>Privacy</h1>
-    <p class="updated">Last updated: 2026-07-26</p>
+    <h1>Terms</h1>
+    <p class="updated">Last updated: 2026-07-27</p>
 
-    <p>Voxtty is built so that your voice never has to leave your machine. This page explains, plainly, what actually happens to your audio, your text, and your visit to this website — no legal boilerplate, just what the software and this site do.</p>
+    <p>Voxtty is an open-core project: a free, open-source app plus an optional paid Pro tier. This page covers what applies today, in plain language.</p>
 
-    <h2>Your voice</h2>
+    <h2>The software</h2>
     <div class="card">
-      <p><span class="em">Transcription is 100% local.</span> Voxtty runs Whisper on your own machine's CPU. Audio is never uploaded, logged, or sent to any server, by Voxtty or by anyone else. This is true whether you're on the Free tier or Pro — audio never leaves your device, full stop.</p>
-    </div>
-
-    <h2>Your transcribed text (Pro, opt-in only)</h2>
-    <div class="card">
-      <p>If you turn on the optional AI cleanup feature (Pro), the <span class="em">transcribed text</span> — never the audio — is sent to the LLM provider you configure (for example, Claude), using an API key you supply yourself. Voxtty does not operate its own server in this path and does not see, store, or log this text. Your usage and any data-handling terms for that step are between you and the LLM provider you choose. If you never enable AI cleanup, no text leaves your machine either.</p>
-    </div>
-
-    <h2>Your custom dictionary</h2>
-    <div class="card">
-      <p>Any names, jargon, or spellings you add to your custom dictionary are stored locally on your machine and applied offline. They are not sent anywhere.</p>
+      <p>The free Voxtty application is licensed under the <span class="em">MIT License</span> — see the <a href="https://github.com/PominausGH/voxtty/blob/master/LICENSE">LICENSE file</a> in the repository for the full, legally binding text. In short: you can use, copy, modify, and redistribute it freely, and it's provided "as is" with no warranty.</p>
     </div>
 
     <h2>This website</h2>
     <div class="card">
-      <p>This site uses a self-hosted, privacy-respecting analytics script (Umami, at <code>analytics.daintytrading.com</code>) to see aggregate visit counts. It does not use cookies and does not track you individually across sites. No accounts, forms, or sign-ups exist on this site, so there's no personal data collected here beyond what your browser sends to any website you visit (e.g. your IP address, via standard web server / CDN logs).</p>
+      <p>voxtty.com is an informational site with no accounts, logins, or user-submitted content. Using it just means viewing pages served over HTTPS. See the <a href="/privacy.html">Privacy page</a> for what this site does and doesn't collect.</p>
     </div>
 
+    <h2>The Pro tier</h2>
+    <div class="card">
+      <p>Pro (AI cleanup, per-app formatting, cross-platform builds) is described on the <a href="/#pricing">pricing section</a> of the homepage. <span class="em">There is no live purchase flow yet</span> — Pro cannot currently be bought through this site. Terms specific to a paid subscription (billing, cancellation, refunds) will be published here once that flow exists.</p>
+    </div>
+
+    <h2>No warranty</h2>
+    <div class="card">
+      <p>Consistent with the MIT License, Voxtty is provided without warranty of any kind. You're responsible for how you use it. If something breaks, the best path is to <a href="https://github.com/PominausGH/voxtty/issues">open an issue on GitHub</a>.</p>
+    </div>
+
+    <h2>Changes</h2>
+    <p>These terms may be updated as the project changes, especially once the Pro tier becomes purchasable. The "last updated" date above will reflect any change.</p>
+
     <h2>Questions</h2>
-    <p>Voxtty is open source. If you want to verify any of the above, the code is public on <a href="https://github.com/PominausGH/voxtty">GitHub</a>. For anything not covered here, open an issue in the repository.</p>
+    <p>Voxtty is open source. If you want to verify any of the above, the code is public on <a href="https://github.com/PominausGH/voxtty">GitHub</a>. For anything not covered here, <a href="https://github.com/PominausGH/voxtty/issues">open an issue</a> in the repository.</p>
   </div>
 </main>
 <footer>
@@ -92,7 +95,7 @@
     <div class="brand">voxtty<span class="tty" style="color:var(--teal)">.</span></div>
     <a href="https://github.com/PominausGH/voxtty">GitHub ↗</a>
     <a href="https://github.com/PominausGH/voxtty/issues">Support</a>
-    <a href="/terms.html">Terms</a>
+    <a href="/privacy.html">Privacy</a>
     <span class="meta">local-first · linux-native · open-core</span>
   </div>
 </footer>
