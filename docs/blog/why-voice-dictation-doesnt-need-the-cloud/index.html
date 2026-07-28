@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://analytics.daintytrading.com; connect-src 'self' https://analytics.daintytrading.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'">
+<title>Why Voice Dictation Doesn't Need the Cloud Anymore | Voxtty</title>
+<meta name="description" content="The real reason dictation software went cloud-first was GPU cost, not accuracy — here's what changed and what "process and discard" actually means for your audio.">
+<link rel="canonical" href="https://voxtty.com/blog/why-voice-dictation-doesnt-need-the-cloud/">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎙️</text></svg>">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Why Voice Dictation Doesn't Need the Cloud Anymore">
+<meta property="og:description" content="The real reason dictation software went cloud-first was GPU cost, not accuracy — here's what changed and what "process and discard" actually means for your audio.">
+<meta property="og:url" content="https://voxtty.com/blog/why-voice-dictation-doesnt-need-the-cloud/">
+<meta property="article:published_time" content="2026-07-29">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Why Voice Dictation Doesn't Need the Cloud Anymore",
+  "description": "The real reason dictation software went cloud-first was GPU cost, not accuracy — here's what changed and what "process and discard" actually means for your audio.",
+  "url": "https://voxtty.com/blog/why-voice-dictation-doesnt-need-the-cloud/",
+  "datePublished": "2026-07-29",
+  "author": { "@type": "Organization", "name": "Voxtty", "url": "https://voxtty.com" },
+  "publisher": { "@type": "Organization", "name": "Voxtty", "url": "https://voxtty.com" }
+}
+</script>
+<style>
+  :root {
+    --ground:#0B0E14; --surface:#12161F; --surface-2:#1A202B;
+    --ink:#E9EDF3; --muted:#9BA7B6; --faint:#8892A2; --border:#232B38;
+    --accent:#FF6A5A; --accent-ink:#FF8578; --accent-soft:#2A1613;
+    --teal:#43B8B2;
+    --mono:ui-monospace,"SF Mono","JetBrains Mono","Fira Code",Menlo,Consolas,monospace;
+    --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --shadow:0 2px 6px rgba(0,0,0,.3), 0 20px 50px rgba(0,0,0,.4);
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --ground:#F2F4F7; --surface:#FFFFFF; --surface-2:#F9FAFB;
+      --ink:#14181F; --muted:#57616E; --faint:#66707E; --border:#E2E6EC;
+      --accent:#DE4E3B; --accent-ink:#B63C2C; --accent-soft:#FBE6E1;
+      --teal:#0E7C7B;
+      --shadow:0 1px 2px rgba(20,30,45,.05), 0 16px 40px rgba(20,30,45,.09);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:#0B0E14; --surface:#12161F; --surface-2:#1A202B;
+    --ink:#E9EDF3; --muted:#9BA7B6; --faint:#8892A2; --border:#232B38;
+    --accent:#FF6A5A; --accent-ink:#FF8578; --accent-soft:#2A1613; --teal:#43B8B2;
+    --shadow:0 2px 6px rgba(0,0,0,.3), 0 20px 50px rgba(0,0,0,.4);
+  }
+  :root[data-theme="light"] {
+    --ground:#F2F4F7; --surface:#FFFFFF; --surface-2:#F9FAFB;
+    --ink:#14181F; --muted:#57616E; --faint:#66707E; --border:#E2E6EC;
+    --accent:#DE4E3B; --accent-ink:#B63C2C; --accent-soft:#FBE6E1; --teal:#0E7C7B;
+    --shadow:0 1px 2px rgba(20,30,45,.05), 0 16px 40px rgba(20,30,45,.09);
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--ground); color:var(--ink); font-family:var(--sans);
+    line-height:1.6; -webkit-font-smoothing:antialiased; }
+  a { color:inherit; }
+  .wrap { max-width:760px; margin:0 auto; padding:0 clamp(18px,4vw,36px); }
+  nav { display:flex; align-items:center; justify-content:space-between; padding:20px 0;
+    border-bottom:1px solid var(--border); max-width:1060px; margin:0 auto; padding-left:clamp(18px,4vw,36px); padding-right:clamp(18px,4vw,36px); }
+  .brand { font-family:var(--mono); font-size:19px; font-weight:600; letter-spacing:-.01em; text-decoration:none; color:var(--ink); }
+  .brand .cursor { display:inline-block; width:.6ch; color:var(--accent); }
+  .navlinks { display:flex; gap:22px; align-items:center; font-size:14px; }
+  .navlinks a { color:var(--muted); text-decoration:none; }
+  .navlinks a:hover, .navlinks a.active { color:var(--ink); }
+  .ghbtn { font-family:var(--mono); font-size:13px; border:1px solid var(--border);
+    border-radius:8px; padding:7px 13px; color:var(--ink); text-decoration:none; background:var(--surface); }
+  .breadcrumb { font-family:var(--mono); font-size:12.5px; color:var(--faint); margin:40px 0 18px; }
+  .breadcrumb a { color:var(--faint); }
+  .breadcrumb a:hover { color:var(--muted); }
+  .tag { display:inline-block; font-family:var(--mono); font-size:12px; color:var(--accent-ink);
+    background:var(--accent-soft); border-radius:999px; padding:4px 11px; margin-bottom:16px; }
+  h1 { font-size:clamp(28px,4.6vw,42px); line-height:1.1; letter-spacing:-.03em; margin:0 0 18px;
+    font-weight:700; text-wrap:balance; }
+  .meta { font-family:var(--mono); font-size:13px; color:var(--faint); display:flex; gap:16px; margin-bottom:44px; }
+  .body { padding-bottom:64px; }
+  .body p { color:var(--muted); font-size:17px; line-height:1.8; margin:0 0 22px; }
+  .body h2 { font-size:1.4rem; font-weight:700; letter-spacing:-.02em; margin:42px 0 14px; color:var(--ink); }
+  .body h3 { font-size:1.1rem; font-weight:600; margin:28px 0 10px; color:var(--ink); }
+  .body ul, .body ol { margin:0 0 22px 22px; color:var(--muted); font-size:17px; line-height:1.8; }
+  .body li { margin-bottom:8px; }
+  .body strong { color:var(--ink); font-weight:600; }
+  .body a { color:var(--accent-ink); }
+  .body a:hover { text-decoration:underline; }
+  .body blockquote { border-left:3px solid var(--accent); padding-left:20px; margin:28px 0; color:var(--faint); font-style:italic; }
+  .body code { font-family:var(--mono); font-size:.9em; background:var(--surface-2); padding:2px 6px; border-radius:4px; }
+  .cta { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:28px;
+    margin:16px 0 48px; box-shadow:var(--shadow); }
+  .cta h3 { margin:0 0 8px; font-size:18px; }
+  .cta p { color:var(--muted); margin:0 0 18px; font-size:15px; }
+  .btn { font-family:var(--mono); font-size:14px; font-weight:600; text-decoration:none;
+    border-radius:10px; padding:11px 18px; display:inline-flex; align-items:center; gap:9px;
+    background:#CE3E2B; color:#fff; }
+  .btn:hover { filter:brightness(1.06); }
+  .back-link { display:inline-flex; align-items:center; gap:6px; color:var(--faint); font-family:var(--mono);
+    font-size:13px; text-decoration:none; }
+  .back-link:hover { color:var(--muted); }
+  footer { border-top:1px solid var(--border); padding:36px 0 56px; max-width:1060px; margin:0 auto; }
+  footer .wrap { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:16px; padding:0 clamp(18px,4vw,36px); }
+  footer .brand { font-size:16px; }
+  footer .meta { font-family:var(--mono); font-size:12.5px; color:var(--faint); }
+  footer a { color:var(--muted); text-decoration:none; font-size:14px; }
+  footer a:hover { color:var(--ink); }
+  @media(max-width:700px) { .navlinks .hide { display:none; } }
+</style>
+</head>
+<body>
+<nav>
+  <a href="/" class="brand">voxtty<span class="cursor">.</span></a>
+  <div class="navlinks">
+    <a href="/blog/" class="active">Blog</a>
+    <a href="/#pricing" class="hide">Pricing</a>
+    <a class="ghbtn" href="https://github.com/PominausGH/voxtty">GitHub ↗</a>
+  </div>
+</nav>
+
+<div class="wrap">
+  <div class="breadcrumb"><a href="/blog/">Blog</a> / Privacy</div>
+  <span class="tag">Privacy</span>
+  <h1>Why Voice Dictation Doesn't Need the Cloud Anymore</h1>
+  <div class="meta">
+    <span>29 July 2026</span>
+    <span>5 min read</span>
+  </div>
+
+  <div class="body">
+    <p>Cloud dictation tools send your audio off-device because running a large speech model on commodity hardware used to be too slow or too memory-hungry to do locally in real time. That's an infrastructure decision, not an accuracy requirement. Since 2023, faster-whisper and int8 quantization have closed the gap enough that a laptop CPU can now transcribe speech about as fast as you speak it.</p>
+
+<p>The industry default of "send audio to our servers" was set when the only models good enough to transcribe conversational speech reliably needed a GPU with real VRAM behind them, the kind you rent by the hour, not the kind sitting idle in a laptop. That constraint shaped a decade of dictation products. It's the reason "voice dictation" and "cloud API" became synonymous even though nothing about turning speech into text inherently requires a network round trip.</p>
+
+<h2>Why this matters</h2>
+
+<p>Every cloud dictation tool has the same three failure modes baked in. First, latency: your words have to leave the machine, get transcribed somewhere else, and come back, which is fine on good wifi and unusable on a flight or a train. Second, availability: if the vendor's API has an outage — and every API has outages — you can't dictate at all, because the local app was never more than a thin client. Third, and the one that gets glossed over, is what actually happens to the audio once it's on their servers.</p>
+
+<p>"We process and discard your audio" is a common claim, and it's usually true in the narrow sense that the raw waveform isn't kept forever. But "processed" audio still transits a third party's infrastructure, gets logged for debugging and abuse detection in the meantime, and is governed by whatever retention and subpoena policy that vendor has today — which you agreed to by clicking through a terms-of-service update, not by reading it. Discard-after-processing is a promise about what happens after the exposure, not a way of avoiding it.</p>
+
+<h2>What changed: the practical approach</h2>
+
+<p>OpenAI's Whisper models were open-weight from release, but the original implementation was slow on CPU and memory-hungry on GPU. faster-whisper reimplemented inference on top of CTranslate2, and with int8 quantization it runs meaningfully faster on the same hardware while giving up little accuracy for the smaller model sizes (tiny through small). That's the actual unlock: not a smarter model, but a faster, leaner way to run an existing one on hardware you already own.</p>
+
+<p>This is why on-device dictation went from "technically possible but painful" to "workable on a normal Linux desktop" in about two years. You don't need a datacenter GPU. A recent CPU with AVX2, or any consumer GPU, handles the small-to-medium Whisper tiers at usable speed for dictation-length utterances.</p>
+
+<p>Voxtty is built around that shift. Press Alt+D, speak, and voice activity detection decides where your utterance starts and stops; faster-whisper transcribes it entirely on the machine, and the text gets typed into whatever window has focus via ydotool. No audio is captured to send anywhere, because there's nowhere it needs to go — the model is already local. It runs as a systemd user service, so it starts with your session and doesn't need a background daemon phoning home to stay licensed or updated.</p>
+
+<p>There's one deliberately scoped exception. Voxtty has an opt-in, off-by-default AI cleanup pass that strips filler words and false starts from the transcript. If you turn it on, the already-transcribed <em>text</em> — never the audio — goes to the Claude API for that cleanup. The distinction matters: by the time anything leaves your machine, it's already just words, not a recording of your voice that could be replayed, fingerprinted, or misattributed.</p>
+
+<h2>Honest limitations</h2>
+
+<p>On-device transcription is not free of tradeoffs. Whisper's smaller models still struggle more than top-tier cloud STT with heavy accents, cross-talk, and domain-specific jargon — a hallway conversation about "Kubernetes ingress controllers" is more likely to get mangled locally than by a cloud model trained on a much larger and more frequently updated corpus. Background noise still degrades accuracy, VAD included.</p>
+
+<p>Voxtty's typing mechanism depends on ydotool, which needs a small daemon with root or input-group permissions and currently targets Wayland and X11 differently — check your distro packages it before assuming zero-setup. The wake-word alternative to Alt+D is still experimental and more prone to false triggers than a physical hotkey. None of this is hidden to make the tool look better than it is; it's the actual state of local speech recognition in mid-2026.</p>
+
+<h2>One thing to do today</h2>
+
+<p>Check whether your distro packages <code>ydotool</code>, and if you're on a laptop, note whether it has an integrated GPU or just a modern CPU — either is enough to try local dictation. Then dictate one real paragraph of something you'd normally type, filler words and all, and see how much cleanup it actually needs. <a href="https://voxtty.com">Try Voxtty free</a> if you want to test that without setting up faster-whisper yourself.</p>
+
+    <div class="cta">
+      <h3>Try Voxtty free</h3>
+      <p>Local-first voice dictation for Linux. Press Alt+D, speak, and your words land in whatever app has focus — nothing leaves your machine.</p>
+      <a href="https://voxtty.com" class="btn">Try Voxtty free →</a>
+    </div>
+
+    <a href="/blog/" class="back-link">← Back to blog</a>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <div class="brand">voxtty<span class="cursor">.</span></div>
+    <a href="https://github.com/PominausGH/voxtty">GitHub ↗</a>
+    <a href="/privacy.html">Privacy</a>
+    <span class="meta">local-first · linux-native · open-core</span>
+  </div>
+</footer>
+</body>
+</html>
