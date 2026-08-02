@@ -18,8 +18,11 @@ This directory is a `voxtty-git` PKGBUILD. It has been built and smoke-tested en
 - The venv-in-package approach (pip-installing `faster-whisper`/`openwakeword`/etc. from PyPI rather than declaring Arch `depends`) works, but the resulting package is large (~170 MB compressed) and slow to build — that tradeoff hasn't been validated against AUR community norms/reviewer expectations.
 - `makepkg`'s packaging step reproducibly hits `bsdtar: opt/voxtty/venv/bin/𝜋thon: Can't translate pathname ... to UTF-8` — this is a genuine CPython 3.14 feature (`venv/__init__.py` adds a `𝜋thon` symlink alongside `python` on UTF-8 filesystems for this Python version specifically), not a bug in this PKGBUILD. `bsdtar` just skips that one file; harmless, since nothing depends on it.
 
+## Publishing without real Arch hardware
+
+No Arch hardware or VM is available to run the hotkey/microphone/tray-icon smoke test in a real session before the first publish, so this is going out with only the container-verified build/import guarantees above — real hotkey capture, mic capture, and tray rendering are unconfirmed. This is normal practice for a new AUR `-git` package: publish, then let the AUR comment thread be the feedback loop for anything that only shows up on real hardware. Keep an eye on comments after the first few installs.
+
 ## To actually publish this
 
-1. Test on real (or VM) Arch hardware: `makepkg -si` in this directory, confirm the hotkey, microphone, and tray icon all work in a real session — the container testing above only validated that the package *builds* and every dependency *imports*.
-2. Create an AUR account at https://aur.archlinux.org and add an SSH key — this has to be done by a human, not from here.
-3. `git clone ssh://aur@aur.archlinux.org/voxtty-git.git`, copy `PKGBUILD`, `voxtty.service`, `voxtty.install`, `.SRCINFO` into it, commit, push.
+1. Create an AUR account at https://aur.archlinux.org and add an SSH key — this has to be done by a human, not from here.
+2. `git clone ssh://aur@aur.archlinux.org/voxtty-git.git`, copy `PKGBUILD`, `voxtty.service`, `voxtty.install`, `.SRCINFO` into it, commit, push.
