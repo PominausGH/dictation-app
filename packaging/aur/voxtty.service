@@ -1,0 +1,21 @@
+[Unit]
+Description=Voxtty - Voice dictation with Alt+D hotkey
+After=graphical-session.target sound.target
+Wants=graphical-session.target
+
+[Service]
+# Installed to /usr/lib/systemd/user/, shared by every user on the system —
+# uses the %t specifier (XDG_RUNTIME_DIR) instead of a baked-in UID so it
+# works for whichever user enables it, unlike setup.sh's per-user sed'd copy.
+Type=simple
+WorkingDirectory=/opt/voxtty
+ExecStart=/opt/voxtty/venv/bin/python /opt/voxtty/voxtty.py
+Restart=on-failure
+RestartSec=5
+Environment=DISPLAY=:0
+Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=%t/bus
+Environment=YDOTOOL_SOCKET=%t/.ydotool_socket
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=graphical-session.target

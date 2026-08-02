@@ -1,0 +1,24 @@
+pkgbase = voxtty-git
+	pkgdesc = Private, local-first voice dictation for Linux (Alt+D hotkey, on-device Whisper transcription)
+	pkgver = r70.71d616a
+	pkgrel = 1
+	url = https://voxtty.com
+	arch = x86_64
+	license = MIT
+	makedepends = git
+	makedepends = python-virtualenv
+	depends = python
+	depends = ydotool
+	depends = portaudio
+	depends = python-gobject
+	depends = gtk3
+	depends = libnotify
+	depends = libayatana-appindicator
+	provides = voxtty
+	conflicts = voxtty
+	source = voxtty::git+https://github.com/PominausGH/voxtty.git
+	source = voxtty.service
+	sha256sums = SKIP
+	sha256sums = SKIP
+
+pkgname = voxtty-git

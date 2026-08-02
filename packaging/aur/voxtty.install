@@ -1,0 +1,26 @@
+post_install() {
+  cat <<'EOF'
+==> Voxtty installed to /opt/voxtty
+
+Before it will work:
+  1. Add yourself to the 'input' group, then log out and back in:
+       sudo usermod -aG input "$USER"
+  2. Enable and start the ydotool daemon:
+       sudo systemctl enable --now ydotoold
+  3. Enable the user service:
+       systemctl --user enable --now voxtty
+
+Optional AI cleanup pass (off by default): put your Anthropic API key in
+~/.config/voxtty/env as ANTHROPIC_API_KEY=..., then set cleanup_enabled: true
+in /opt/voxtty/config.json (created on first run) and restart the service.
+
+Press Alt+D anywhere to start/stop dictating.
+EOF
+}
+
+post_upgrade() {
+  cat <<'EOF'
+==> Voxtty updated. Restart the service to pick up the new version:
+      systemctl --user restart voxtty
+EOF
+}
