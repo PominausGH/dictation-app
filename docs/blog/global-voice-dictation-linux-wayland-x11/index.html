@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://analytics.daintytrading.com; connect-src 'self' https://analytics.daintytrading.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'">
+<title>How to Set Up Global Voice Dictation on Linux (Wayland or X11) | Voxtty</title>
+<meta name="description" content="A practical walkthrough of the pieces needed for global voice dictation on Linux: ydotool, a hotkey daemon, PortAudio capture, and a systemd user service.">
+<link rel="canonical" href="https://voxtty.com/blog/global-voice-dictation-linux-wayland-x11/">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎙️</text></svg>">
+<meta property="og:type" content="article">
+<meta property="og:title" content="How to Set Up Global Voice Dictation on Linux (Wayland or X11)">
+<meta property="og:description" content="A practical walkthrough of the pieces needed for global voice dictation on Linux: ydotool, a hotkey daemon, PortAudio capture, and a systemd user service.">
+<meta property="og:url" content="https://voxtty.com/blog/global-voice-dictation-linux-wayland-x11/">
+<meta property="article:published_time" content="2026-08-05">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "How to Set Up Global Voice Dictation on Linux (Wayland or X11)",
+  "description": "A practical walkthrough of the pieces needed for global voice dictation on Linux: ydotool, a hotkey daemon, PortAudio capture, and a systemd user service.",
+  "url": "https://voxtty.com/blog/global-voice-dictation-linux-wayland-x11/",
+  "datePublished": "2026-08-05",
+  "author": { "@type": "Organization", "name": "Voxtty", "url": "https://voxtty.com" },
+  "publisher": { "@type": "Organization", "name": "Voxtty", "url": "https://voxtty.com" }
+}
+</script>
+<style>
+  :root {
+    --ground:#0B0E14; --surface:#12161F; --surface-2:#1A202B;
+    --ink:#E9EDF3; --muted:#9BA7B6; --faint:#8892A2; --border:#232B38;
+    --accent:#FF6A5A; --accent-ink:#FF8578; --accent-soft:#2A1613;
+    --teal:#43B8B2;
+    --mono:ui-monospace,"SF Mono","JetBrains Mono","Fira Code",Menlo,Consolas,monospace;
+    --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --shadow:0 2px 6px rgba(0,0,0,.3), 0 20px 50px rgba(0,0,0,.4);
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --ground:#F2F4F7; --surface:#FFFFFF; --surface-2:#F9FAFB;
+      --ink:#14181F; --muted:#57616E; --faint:#66707E; --border:#E2E6EC;
+      --accent:#DE4E3B; --accent-ink:#B63C2C; --accent-soft:#FBE6E1;
+      --teal:#0E7C7B;
+      --shadow:0 1px 2px rgba(20,30,45,.05), 0 16px 40px rgba(20,30,45,.09);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:#0B0E14; --surface:#12161F; --surface-2:#1A202B;
+    --ink:#E9EDF3; --muted:#9BA7B6; --faint:#8892A2; --border:#232B38;
+    --accent:#FF6A5A; --accent-ink:#FF8578; --accent-soft:#2A1613; --teal:#43B8B2;
+    --shadow:0 2px 6px rgba(0,0,0,.3), 0 20px 50px rgba(0,0,0,.4);
+  }
+  :root[data-theme="light"] {
+    --ground:#F2F4F7; --surface:#FFFFFF; --surface-2:#F9FAFB;
+    --ink:#14181F; --muted:#57616E; --faint:#66707E; --border:#E2E6EC;
+    --accent:#DE4E3B; --accent-ink:#B63C2C; --accent-soft:#FBE6E1; --teal:#0E7C7B;
+    --shadow:0 1px 2px rgba(20,30,45,.05), 0 16px 40px rgba(20,30,45,.09);
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--ground); color:var(--ink); font-family:var(--sans);
+    line-height:1.6; -webkit-font-smoothing:antialiased; }
+  a { color:inherit; }
+  .wrap { max-width:760px; margin:0 auto; padding:0 clamp(18px,4vw,36px); }
+  nav { display:flex; align-items:center; justify-content:space-between; padding:20px 0;
+    border-bottom:1px solid var(--border); max-width:1060px; margin:0 auto; padding-left:clamp(18px,4vw,36px); padding-right:clamp(18px,4vw,36px); }
+  .brand { font-family:var(--mono); font-size:19px; font-weight:600; letter-spacing:-.01em; text-decoration:none; color:var(--ink); }
+  .brand .cursor { display:inline-block; width:.6ch; color:var(--accent); }
+  .navlinks { display:flex; gap:22px; align-items:center; font-size:14px; }
+  .navlinks a { color:var(--muted); text-decoration:none; }
+  .navlinks a:hover, .navlinks a.active { color:var(--ink); }
+  .ghbtn { font-family:var(--mono); font-size:13px; border:1px solid var(--border);
+    border-radius:8px; padding:7px 13px; color:var(--ink); text-decoration:none; background:var(--surface); }
+  .breadcrumb { font-family:var(--mono); font-size:12.5px; color:var(--faint); margin:40px 0 18px; }
+  .breadcrumb a { color:var(--faint); }
+  .breadcrumb a:hover { color:var(--muted); }
+  .tag { display:inline-block; font-family:var(--mono); font-size:12px; color:var(--accent-ink);
+    background:var(--accent-soft); border-radius:999px; padding:4px 11px; margin-bottom:16px; }
+  h1 { font-size:clamp(28px,4.6vw,42px); line-height:1.1; letter-spacing:-.03em; margin:0 0 18px;
+    font-weight:700; text-wrap:balance; }
+  .meta { font-family:var(--mono); font-size:13px; color:var(--faint); display:flex; gap:16px; margin-bottom:44px; }
+  .body { padding-bottom:64px; }
+  .body p { color:var(--muted); font-size:17px; line-height:1.8; margin:0 0 22px; }
+  .body h2 { font-size:1.4rem; font-weight:700; letter-spacing:-.02em; margin:42px 0 14px; color:var(--ink); }
+  .body h3 { font-size:1.1rem; font-weight:600; margin:28px 0 10px; color:var(--ink); }
+  .body ul, .body ol { margin:0 0 22px 22px; color:var(--muted); font-size:17px; line-height:1.8; }
+  .body li { margin-bottom:8px; }
+  .body strong { color:var(--ink); font-weight:600; }
+  .body a { color:var(--accent-ink); }
+  .body a:hover { text-decoration:underline; }
+  .body blockquote { border-left:3px solid var(--accent); padding-left:20px; margin:28px 0; color:var(--faint); font-style:italic; }
+  .body code { font-family:var(--mono); font-size:.9em; background:var(--surface-2); padding:2px 6px; border-radius:4px; }
+  .cta { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:28px;
+    margin:16px 0 48px; box-shadow:var(--shadow); }
+  .cta h3 { margin:0 0 8px; font-size:18px; }
+  .cta p { color:var(--muted); margin:0 0 18px; font-size:15px; }
+  .btn { font-family:var(--mono); font-size:14px; font-weight:600; text-decoration:none;
+    border-radius:10px; padding:11px 18px; display:inline-flex; align-items:center; gap:9px;
+    background:#CE3E2B; color:#fff; }
+  .btn:hover { filter:brightness(1.06); }
+  .back-link { display:inline-flex; align-items:center; gap:6px; color:var(--faint); font-family:var(--mono);
+    font-size:13px; text-decoration:none; }
+  .back-link:hover { color:var(--muted); }
+  footer { border-top:1px solid var(--border); padding:36px 0 56px; max-width:1060px; margin:0 auto; }
+  footer .wrap { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:16px; padding:0 clamp(18px,4vw,36px); }
+  footer .brand { font-size:16px; }
+  footer .meta { font-family:var(--mono); font-size:12.5px; color:var(--faint); }
+  footer a { color:var(--muted); text-decoration:none; font-size:14px; }
+  footer a:hover { color:var(--ink); }
+  @media(max-width:700px) { .navlinks .hide { display:none; } }
+</style>
+</head>
+<body>
+<nav>
+  <a href="/" class="brand">voxtty<span class="cursor">.</span></a>
+  <div class="navlinks">
+    <a href="/blog/" class="active">Blog</a>
+    <a href="/#pricing" class="hide">Pricing</a>
+    <a class="ghbtn" href="https://github.com/PominausGH/voxtty">GitHub ↗</a>
+  </div>
+</nav>
+
+<div class="wrap">
+  <div class="breadcrumb"><a href="/blog/">Blog</a> / Linux</div>
+  <span class="tag">Linux</span>
+  <h1>How to Set Up Global Voice Dictation on Linux (Wayland or X11)</h1>
+  <div class="meta">
+    <span>5 August 2026</span>
+    <span>5 min read</span>
+  </div>
+
+  <div class="body">
+    <p>Global voice dictation on Linux needs four working parts: a way to capture microphone audio, a hotkey daemon that listens system-wide, a transcription engine, and a way to type the result into whatever window has focus. On X11 that last part is trivial. On Wayland it's the part that breaks most DIY setups, because the compositor deliberately blocks apps from injecting keystrokes into windows they don't own.</p>
+
+<h2>Why this is harder than it should be</h2>
+<p>Cloud dictation tools sidestep the local input problem by running as browser extensions or by owning the whole window, but that means your audio leaves the machine every time you talk. That's a real cost: latency on every utterance, a dependency on an API being up when you need to type, and a permanent copy of your voice sitting on someone else's infrastructure. For anything you'd rather not narrate to a third-party server — passwords, client names, unreleased code — that's not paranoia, it's just what "cloud" means.</p>
+<p>The alternative is doing transcription on-device and injecting the text locally. That's mechanically straightforward on X11, where any process can simulate input. Wayland's security model treats that as a vulnerability class (it's literally how X11 keyloggers work) and locks it down per-compositor. So a Linux dictation tool has to solve input injection twice.</p>
+
+<h2>The pieces, in order</h2>
+<p><strong>1. Audio capture.</strong> PortAudio (or ALSA/PipeWire directly) opens the mic and streams frames to your transcription engine. You generally want voice activity detection (VAD) in front of it — silero-vad or webrtcvad — so you're not transcribing dead air between sentences and burning CPU on an idle mic.</p>
+<p><strong>2. A global hotkey daemon.</strong> You need something listening for a key combo regardless of which window has focus. On X11 this is usually a raw X grab via a library like <code>python-xlib</code> or a binding through <code>evdev</code>. On Wayland, compositors don't expose global hotkeys through the display protocol at all — the practical answer is reading raw input events from <code>/dev/input/event*</code> via <code>evdev</code>, which is compositor-agnostic and works identically under GNOME, KDE, or Sway.</p>
+<p><strong>3. Transcription.</strong> This is where faster-whisper (a CTranslate2 reimplementation of Whisper) does the actual speech-to-text, entirely on-device. Model size is a real tradeoff — <code>base</code> or <code>small</code> run fine on a CPU in near real time, <code>medium</code> and above want a GPU if you don't want a noticeable pause after you stop talking.</p>
+<p><strong>4. Typing the output.</strong> This is <code>ydotool</code>'s job, and it's why it exists as a separate project from the older <code>xdotool</code>. Instead of talking to the X server, <code>ydotool</code> talks to a virtual input device via <code>uinput</code> — it injects events at the kernel level, below the compositor, so it works identically on Wayland and X11. The catch: writing to <code>/dev/uinput</code> requires either root or membership in the <code>input</code> group, plus the <code>ydotoold</code> daemon running to broker requests. Add yourself with <code>sudo usermod -aG input $USER</code>, log out and back in, and start the daemon before your hotkey tool tries to use it.</p>
+<p><strong>5. A systemd user service.</strong> None of this is useful if you have to remember to launch it manually. A user unit in <code>~/.config/systemd/user/</code> with <code>WantedBy=default.target</code>, enabled via <code>systemctl --user enable --now</code>, starts your daemon on login and restarts it if it crashes — same pattern as any other background service, just scoped to your session instead of the system.</p>
+
+<p>This is the exact stack Voxtty runs: PortAudio for capture, an <code>evdev</code>-based hotkey daemon so Alt+D works the same on GNOME/Wayland and i3/X11, faster-whisper for on-device transcription, and <code>ydotool</code> for the actual typing — packaged as a systemd user service so it's running before you've opened your first terminal. Nothing leaves the machine except, optionally, the transcript text if you opt into AI cleanup — never the audio. <a href="https://voxtty.com">Try Voxtty free</a> if you'd rather not wire the four pieces together yourself.</p>
+
+<h2>Where it breaks</h2>
+<p>Whisper models struggle with strong accents, heavy background noise, and dense technical jargon — expect more correction on words like library or framework names than on plain prose. VAD tuned too aggressively will clip the start of sentences; tuned too loosely, it transcribes your keyboard clicks. <code>ydotool</code>'s <code>uinput</code> approach means it types faster than a human but not instantaneously — on some GTK apps rapid injected keystrokes can outrun the text field's redraw and drop characters, so a small per-key delay is often necessary. And because Wayland's hotkey path relies on raw <code>evdev</code> reads rather than a compositor API, it needs that same <code>input</code> group membership as <code>ydotool</code> — one more reason to get the group permission right first, before debugging anything else.</p>
+
+<h2>One thing to do today</h2>
+<p>Check whether <code>ydotool</code> is packaged for your distro (<code>apt show ydotool</code>, <code>pacman -Ss ydotool</code>, or check the AUR/COPR) and confirm your user is in the <code>input</code> group with <code>groups $USER</code>. Getting that permission sorted is the single step that unblocks everything else, on both X11 and Wayland.</p>
+
+    <div class="cta">
+      <h3>Try Voxtty free</h3>
+      <p>Local-first voice dictation for Linux. Press Alt+D, speak, and your words land in whatever app has focus — nothing leaves your machine.</p>
+      <a href="https://voxtty.com" class="btn">Try Voxtty free →</a>
+    </div>
+
+    <a href="/blog/" class="back-link">← Back to blog</a>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <div class="brand">voxtty<span class="cursor">.</span></div>
+    <a href="https://github.com/PominausGH/voxtty">GitHub ↗</a>
+    <a href="/privacy.html">Privacy</a>
+    <span class="meta">local-first · linux-native · open-core</span>
+  </div>
+</footer>
+</body>
+</html>
