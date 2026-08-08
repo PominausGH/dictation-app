@@ -72,6 +72,9 @@ _DEFAULTS: dict = {
     # Local, offline formatting cleanup (capitalization, spacing, punctuation
     # spacing). No API, no network — safe to leave on for the free tier.
     "rule_cleanup_enabled": True,
+    # Local, offline removal of filler words (um, uh, erm, er). No API, no
+    # network. Independent of AI cleanup — works even with cleanup_enabled off.
+    "strip_filler_words": True,
     "cleanup_enabled": False,
     "cleanup_model": "claude-haiku-4-5",
     # Local, offline whole-word replacements applied before cleanup, e.g.
@@ -185,6 +188,8 @@ class VoxttyApp:
             if text is None:
                 break
             text = self._apply_replacements(text)
+            if CFG["strip_filler_words"]:
+                text = self._strip_fillers(text)
             if CFG["rule_cleanup_enabled"]:
                 text = self._rule_cleanup(text)
             if self.cleanup_enabled and self._cleanup_ready():
@@ -209,6 +214,16 @@ class VoxttyApp:
                 continue
             text = re.sub(rf"\b{re.escape(spoken)}\b", written, text, flags=re.IGNORECASE)
         return text
+
+    # ── Filler-word removal (local, offline, no API) ────────────────────────
+
+    _FILLER_STRIP_RE = re.compile(
+        r"\s*,?\s*\b(?:um+|uh+|erm+|er)\b\s*,?\s*", re.IGNORECASE
+    )
+
+    def _strip_fillers(self, text: str) -> str:
+        """Drop standalone filler words (um, uh, erm, er). Purely local."""
+        return self._FILLER_STRIP_RE.sub(" ", text)
 
     # ── Rule-based cleanup (local, offline, no API) ────────────────────────
 
