@@ -1,6 +1,6 @@
 # Voxtty
 
-Private, local-first voice dictation for Linux. Press **Alt+D**, speak, and your words are typed into whatever app has focus — transcribed entirely on your own machine.
+Private, local-first voice dictation for Linux and Windows. Press **Alt+D**, speak, and your words are typed into whatever app has focus — transcribed entirely on your own machine.
 
 Site: [voxtty.com](https://voxtty.com)
 
@@ -18,12 +18,11 @@ Site: [voxtty.com](https://voxtty.com)
 
 ## Requirements
 
-- Ubuntu Linux (Wayland), Python 3.10+
-- `ydotool` for typing into applications
-- `portaudio` for audio capture
+- **Linux**: Ubuntu (Wayland), Python 3.10+, `ydotool` for typing, `portaudio` for audio capture
+- **Windows**: Windows 10/11, Python 3.10+
 - A microphone
 
-## Installation
+## Installation (Linux)
 
 ```bash
 git clone https://github.com/PominausGH/voxtty.git
@@ -35,7 +34,22 @@ cd voxtty
 
 **Log out and back in** after setup for the `input` group change to take effect. Then press **Alt+D** anywhere to start dictating.
 
-## Usage
+## Installation (Windows)
+
+```powershell
+git clone https://github.com/PominausGH/voxtty.git
+cd voxtty
+.\setup.bat
+```
+
+`setup.bat`/`setup.ps1` creates a Python virtual environment, installs dependencies, and registers a **Task Scheduler** task (runs at logon, under your own user, no elevation) that starts Voxtty automatically. Press **Alt+D** anywhere to start dictating.
+
+A few Windows-specific things worth knowing:
+- Alt+D is also a built-in "focus the address bar" shortcut in most browsers and File Explorer — both will fire together, same as the non-exclusive hook behavior on Linux.
+- A global keyboard hook plus synthetic keystroke injection is a common antivirus/SmartScreen heuristic for keylogger-style tools. Voxtty isn't code-signed yet, so don't be surprised if your AV flags it on first run — it's a false positive from the technique, not the intent.
+- Logs and the AI-cleanup API key file both live under `%LOCALAPPDATA%\voxtty` (Windows has no XDG-style data/config split).
+
+## Usage (Linux)
 
 ```bash
 systemctl --user status voxtty    # check status
@@ -46,7 +60,17 @@ journalctl --user -u voxtty -f    # live logs
 
 Logs are also saved to `~/.local/share/voxtty/voxtty.log`.
 
-`toggle_voxtty.sh` can be bound to a custom keyboard shortcut (e.g. in GNOME Settings) as an alternative to Alt+D.
+`toggle_voxtty.sh` can be bound to a custom keyboard shortcut (e.g. in GNOME Settings) as an alternative to Alt+D. This is Linux-only — Alt+D's global hook works uniformly across Windows desktop sessions, so there's no equivalent need on Windows.
+
+## Usage (Windows)
+
+```powershell
+schtasks /Query /TN Voxtty    # check status
+schtasks /End /TN Voxtty      # stop
+schtasks /Run /TN Voxtty      # start
+```
+
+Logs are saved to `%LOCALAPPDATA%\voxtty\voxtty.log`.
 
 ## Configuration
 
@@ -59,7 +83,7 @@ Voxtty writes a `config.json` in the repo directory on first run (git-ignored �
 - `cleanup_enabled` — opt-in AI cleanup pass via the Claude API (default `false`)
 - `word_replacements` — a `{"heard": "typed"}` map for custom dictionary entries
 
-To enable AI cleanup, set `cleanup_enabled: true` in `config.json` and put your Anthropic API key in `~/.config/voxtty/env` (created by `setup.sh`), then restart the service.
+To enable AI cleanup, set `cleanup_enabled: true` in `config.json` and put your Anthropic API key in the `env` file created by setup (`~/.config/voxtty/env` on Linux, `%LOCALAPPDATA%\voxtty\env` on Windows), then restart.
 
 ## Pricing
 

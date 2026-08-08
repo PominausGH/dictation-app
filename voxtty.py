@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Voxtty — voice dictation for Linux
+Voxtty — voice dictation for Linux and Windows
 Say "hey Jarvis" (or press Alt+D) to start/stop dictation.
 Transcribes with faster-whisper, types into focused app.
 """
@@ -10,28 +10,28 @@ import logging
 import os
 import queue
 import re
-import selectors
 import signal
-import subprocess
 import sys
 import threading
 import time
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
-import evdev
 import numpy as np
+import platformdirs
 import pyaudio
 import webrtcvad
-from evdev import ecodes
 from faster_whisper import WhisperModel
 from PIL import Image, ImageDraw
 import pystray
 
+from backends import get_backend
+
 # ── Paths ─────────────────────────────────────────────────────────────────────
 
 APP_DIR = Path(__file__).parent
-DATA_DIR = Path.home() / ".local" / "share" / "voxtty"
+DATA_DIR = Path(platformdirs.user_data_dir("voxtty", appauthor=False))
+CONFIG_DIR = Path(platformdirs.user_config_dir("voxtty", appauthor=False))
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 # ── Logging ───────────────────────────────────────────────────────────────────
@@ -41,10 +41,11 @@ log.setLevel(logging.INFO)
 _fmt = logging.Formatter("%(asctime)s %(levelname)-8s %(message)s", datefmt="%H:%M:%S")
 _fh = RotatingFileHandler(DATA_DIR / "voxtty.log", maxBytes=1_000_000, backupCount=3)
 _fh.setFormatter(_fmt)
-_ch = logging.StreamHandler()
-_ch.setFormatter(_fmt)
 log.addHandler(_fh)
-log.addHandler(_ch)
+if sys.stderr is not None:
+    _ch = logging.StreamHandler()
+    _ch.setFormatter(_fmt)
+    log.addHandler(_ch)
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
@@ -78,22 +79,27 @@ _DEFAULTS: dict = {
     "word_replacements": {},
 }
 
+CONFIG_PATH = APP_DIR / "config.json"
+
 def _load_config() -> dict:
-    path = APP_DIR / "config.json"
-    if not path.exists():
-        path.write_text(json.dumps(_DEFAULTS, indent=2) + "\n")
-        log.info(f"Created default config: {path}")
-    cfg = json.loads(path.read_text())
+    if not CONFIG_PATH.exists():
+        CONFIG_PATH.write_text(json.dumps(_DEFAULTS, indent=2) + "\n")
+        log.info(f"Created default config: {CONFIG_PATH}")
+    cfg = json.loads(CONFIG_PATH.read_text())
     for k, v in _DEFAULTS.items():
         cfg.setdefault(k, v)
     return cfg
 
+def _save_config_key(key: str, value) -> None:
+    """Persist a single config value, preserving any other keys already on disk."""
+    try:
+        cfg = json.loads(CONFIG_PATH.read_text())
+        cfg[key] = value
+        CONFIG_PATH.write_text(json.dumps(cfg, indent=2) + "\n")
+    except Exception as e:
+        log.warning(f"Failed to persist config change ({key}={value}): {e}")
+
 CFG = _load_config()
-
-# ── Wayland ydotool socket ────────────────────────────────────────────────────
-
-if not os.environ.get("YDOTOOL_SOCKET"):
-    os.environ["YDOTOOL_SOCKET"] = f"/run/user/{os.getuid()}/.ydotool_socket"
 
 # ── Audio constants (derived from config) ────────────────────────────────────
 
@@ -111,8 +117,8 @@ class VoxttyApp:
         self.shutdown_flag = False
         self.word_count = 0
         self.tray: pystray.Icon | None = None
-        self.alt_pressed = False
         self.wake_word_cooldown = 0
+        self.backend = get_backend()
 
         # AI cleanup state (lazy-initialized on first use)
         self.cleanup_enabled = CFG["cleanup_enabled"]
@@ -133,13 +139,7 @@ class VoxttyApp:
     # ── Notifications ─────────────────────────────────────────────────────────
 
     def _notify(self, summary: str, body: str = "") -> None:
-        try:
-            subprocess.run(
-                ["notify-send", "-a", "Voxtty", "-t", "2000", summary, body],
-                capture_output=True, timeout=2,
-            )
-        except Exception:
-            pass
+        self.backend.notify(summary, body)
 
     # ── Wake word ─────────────────────────────────────────────────────────────
 
@@ -191,21 +191,8 @@ class VoxttyApp:
                 text = self._cleanup_text(text)
             if not text:
                 continue
-            self._do_type(text + " ")
+            self.backend.type_text(text + " ")
             self.word_count += len(text.split())
-
-    def _do_type(self, text: str) -> None:
-        if not text:
-            return
-        try:
-            subprocess.run(
-                ["ydotool", "type", "--key-delay", "0", "--", text],
-                check=True, capture_output=True,
-            )
-        except subprocess.CalledProcessError as e:
-            log.error(f"ydotool type failed: {e}")
-        except FileNotFoundError:
-            log.error("ydotool not found — run setup.sh first.")
 
     def type_text(self, text: str) -> None:
         if text:
@@ -254,7 +241,7 @@ class VoxttyApp:
         key = os.environ.get("ANTHROPIC_API_KEY")
         if key:
             return key.strip()
-        env_file = Path.home() / ".config" / "voxtty" / "env"
+        env_file = CONFIG_DIR / "env"
         if env_file.exists():
             for line in env_file.read_text().splitlines():
                 line = line.strip()
@@ -483,119 +470,6 @@ class VoxttyApp:
                 self._notify("Voxtty", "Microphone lost — reconnecting...")
                 time.sleep(delay)
 
-    # ── Keyboard ─────────────────────────────────────────────────────────────
-
-    def _find_keyboards(self) -> list[evdev.InputDevice]:
-        skip = ("ydotool", "RustDesk")
-        keyboards = []
-        for path in evdev.list_devices():
-            dev = evdev.InputDevice(path)
-            if any(s in dev.name for s in skip):
-                continue
-            caps = dev.capabilities()
-            if ecodes.EV_KEY in caps:
-                keys = caps[ecodes.EV_KEY]
-                if ecodes.KEY_D in keys and ecodes.KEY_LEFTALT in keys:
-                    keyboards.append(dev)
-        return keyboards
-
-    def keyboard_listener(self) -> None:
-        sel = selectors.DefaultSelector()
-        registered: dict[str, evdev.InputDevice] = {}
-
-        def refresh_devices() -> None:
-            """(Re)scan for keyboards and register any not already watched.
-
-            Wireless receivers drop out on power-save and come back with the
-            same path, so we poll periodically to recover them. A dead device
-            is dropped in the read loop below; this re-adds it once it returns.
-            """
-            try:
-                found = {kb.path: kb for kb in self._find_keyboards()}
-            except Exception as e:
-                log.warning(f"Keyboard scan failed: {e}")
-                return
-            for path, kb in found.items():
-                if path in registered:
-                    kb.close()  # already watching this one
-                    continue
-                try:
-                    sel.register(kb, selectors.EVENT_READ)
-                    registered[path] = kb
-                    log.info(f"Keyboard: {kb.name}")
-                except Exception as e:
-                    log.warning(f"Could not watch {kb.name}: {e}")
-                    kb.close()
-
-        def drop_device(kb: evdev.InputDevice) -> None:
-            try:
-                sel.unregister(kb)
-            except Exception:
-                pass
-            registered.pop(kb.path, None)
-            try:
-                kb.close()
-            except Exception:
-                pass
-            # The key-up never arrives for a device that vanished mid-chord,
-            # so a held Alt would latch on and make bare 'D' a hotkey.
-            self.alt_pressed = False
-
-        refresh_devices()
-        if not registered:
-            log.error("No keyboard devices found — check 'input' group membership.")
-            return
-
-        last_scan = time.monotonic()
-        try:
-            while not self.shutdown_flag:
-                try:
-                    # Periodically re-scan so reconnected keyboards come back.
-                    if time.monotonic() - last_scan > 5.0:
-                        refresh_devices()
-                        last_scan = time.monotonic()
-
-                    for key, _ in sel.select(timeout=1.0):
-                        kb = key.fileobj
-                        try:
-                            events = kb.read()
-                        except OSError as e:
-                            # A single device vanished (Errno 19). Drop it and
-                            # keep the loop alive for the other keyboards.
-                            log.warning(f"Keyboard '{kb.name}' lost ({e}); will retry.")
-                            drop_device(kb)
-                            continue
-                        for event in events:
-                            if event.type != ecodes.EV_KEY:
-                                continue
-                            ke = evdev.categorize(event)
-                            if ke.scancode in (ecodes.KEY_LEFTALT, ecodes.KEY_RIGHTALT):
-                                # Autorepeat emits key_hold while Alt stays down,
-                                # so only key_up may clear this. Devices send hold
-                                # events even when they report no EV_REP.
-                                self.alt_pressed = ke.keystate != ke.key_up
-                            elif ke.scancode == ecodes.KEY_D and ke.keystate == ke.key_down:
-                                if self.alt_pressed:
-                                    threading.Thread(target=self.toggle_state, daemon=True).start()
-                except OSError as e:
-                    # Any other device-churn error — a rescan opening a device
-                    # that's mid-removal, or epoll itself faulting on a fd pulled
-                    # out from under select() — must not kill the listener (this
-                    # is what died at the ENODEV crash). Purge everything and
-                    # rescan; the live keyboards re-register, dead ones stay out
-                    # until they reconnect. An empty selector waits out its
-                    # timeout without erroring, so this never busy-loops.
-                    log.warning(f"Keyboard listener recovered from {e}; rescanning.")
-                    for kb in list(registered.values()):
-                        drop_device(kb)
-                    last_scan = 0.0
-        except Exception as e:
-            log.error(f"Keyboard listener error: {e}", exc_info=True)
-        finally:
-            for kb in list(registered.values()):
-                drop_device(kb)
-            sel.close()
-
     # ── Tray ──────────────────────────────────────────────────────────────────
 
     def _make_tray_icon(self, active: bool) -> Image.Image:
@@ -639,6 +513,7 @@ class VoxttyApp:
 
     def _toggle_cleanup(self, icon, item) -> None:
         self.cleanup_enabled = not self.cleanup_enabled
+        _save_config_key("cleanup_enabled", self.cleanup_enabled)
         state = "on" if self.cleanup_enabled else "off"
         log.info(f"AI cleanup {state}")
         self._notify("Voxtty", f"AI cleanup {state}")
@@ -647,20 +522,16 @@ class VoxttyApp:
         log.info("Quit requested.")
         self.shutdown_flag = True
         self.text_queue.put(None)
-        Path("/tmp/voxtty.pid").unlink(missing_ok=True)
+        if sys.platform.startswith("linux"):
+            Path("/tmp/voxtty.pid").unlink(missing_ok=True)
         if self.tray:
             self.tray.stop()
 
     # ── Entry point ───────────────────────────────────────────────────────────
 
-    def _check_ydotool(self) -> bool:
-        try:
-            subprocess.run(["ydotool", "--help"], check=True, capture_output=True)
-            return True
-        except (subprocess.CalledProcessError, FileNotFoundError):
-            return False
-
     def _install_signal_handlers(self) -> None:
+        if not hasattr(signal, "SIGUSR1"):
+            return
         signal.signal(signal.SIGUSR1, lambda sig, frame: threading.Thread(
             target=self.toggle_state, daemon=True
         ).start())
@@ -668,21 +539,28 @@ class VoxttyApp:
     def run(self) -> None:
         log.info("Voxtty starting (faster-whisper + openwakeword)")
 
-        if not self._check_ydotool():
-            log.error("ydotool unavailable — run: sudo ydotoold &")
+        ok, err = self.backend.check_ready()
+        if not ok:
+            log.error(err or "Backend not ready.")
             sys.exit(1)
 
         self._install_signal_handlers()
 
-        pid_file = Path("/tmp/voxtty.pid")
-        pid_file.write_text(str(os.getpid()))
-
-        log.info(f"PID {os.getpid()} — send SIGUSR1 or press Alt+D to toggle.")
-
-        threading.Thread(target=self._audio_loop, daemon=True).start()
-        threading.Thread(target=self.keyboard_listener, daemon=True).start()
+        if sys.platform.startswith("linux"):
+            pid_file = Path("/tmp/voxtty.pid")
+            pid_file.write_text(str(os.getpid()))
+            log.info(f"PID {os.getpid()} — send SIGUSR1 or press Alt+D to toggle.")
 
         self._build_tray()
+        self.backend.attach_tray(self.tray)
+
+        threading.Thread(target=self._audio_loop, daemon=True).start()
+        threading.Thread(
+            target=self.backend.run_hotkey_listener,
+            args=(self.toggle_state, lambda: self.shutdown_flag),
+            daemon=True,
+        ).start()
+
         try:
             self.tray.run()
         except KeyboardInterrupt:

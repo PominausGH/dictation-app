@@ -33,6 +33,12 @@ source venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
 
+# openwakeword's tflite-runtime dependency has no current-Python wheels, so a
+# plain install fails; pull it in separately with --no-deps + its real deps
+# (falls back to onnxruntime at import time when tflite_runtime is absent).
+pip install --no-deps 'openwakeword>=0.6.0'
+pip install 'onnxruntime>=1.10.0,<2' 'scipy>=1.3,<2' 'scikit-learn>=1,<2' 'requests>=2.0,<3' 'tqdm>=4.0,<5.0'
+
 # Create config dir + API key template (for optional AI cleanup)
 echo "[5/6] Setting up AI cleanup config directory..."
 mkdir -p ~/.config/voxtty

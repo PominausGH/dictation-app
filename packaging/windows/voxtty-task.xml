@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-16"?>
+<!--
+  Voxtty autostart task template.
+
+  Placeholders below (__VOXTTY_INSTALL_DIR__, __VOXTTY_PYTHONW__) are filled in
+  by setup.ps1 at install time — don't hardcode a real path here, it gets
+  substituted fresh for every installer.
+
+  LogonType=InteractiveToken / RunLevel=LeastPrivilege is required, not optional:
+  running elevated would force a UAC prompt at every login (breaking silent
+  autostart) and is an unnecessary privilege increase for a process whose job
+  is a keyboard hook + synthetic input injection. Matches the Linux systemd
+  user service's own posture (runs as the user, not root/admin).
+
+  This file must stay UTF-16 encoded — `schtasks /Create /XML` silently fails
+  or misparses on UTF-8 input. setup.ps1 writes the substituted copy with
+  `Set-Content -Encoding Unicode`; don't "fix" that back to UTF-8.
+-->
+<Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
+  <RegistrationInfo>
+    <Description>Voxtty - Voice dictation with Alt+D hotkey</Description>
+  </RegistrationInfo>
+  <Triggers>
+    <LogonTrigger>
+      <Enabled>true</Enabled>
+    </LogonTrigger>
+  </Triggers>
+  <Principals>
+    <Principal id="Author">
+      <LogonType>InteractiveToken</LogonType>
+      <RunLevel>LeastPrivilege</RunLevel>
+    </Principal>
+  </Principals>
+  <Settings>
+    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
+    <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
+    <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
+    <StartWhenAvailable>true</StartWhenAvailable>
+    <RestartOnFailure>
+      <Interval>PT1M</Interval>
+      <Count>3</Count>
+    </RestartOnFailure>
+    <Hidden>true</Hidden>
+  </Settings>
+  <Actions Context="Author">
+    <Exec>
+      <Command>__VOXTTY_PYTHONW__</Command>
+      <Arguments>"__VOXTTY_INSTALL_DIR__\voxtty.py"</Arguments>
+      <WorkingDirectory>__VOXTTY_INSTALL_DIR__</WorkingDirectory>
+    </Exec>
+  </Actions>
+</Task>
