@@ -1,7 +1,7 @@
 fetch('https://api.github.com/repos/PominausGH/voxtty')
   .then(function (r) { return r.ok ? r.json() : null; })
   .then(function (data) {
-    if (!data || typeof data.stargazers_count !== 'number') return;
+    if (!data || typeof data.stargazers_count !== 'number' || data.stargazers_count === 0) return;
     document.querySelectorAll('[data-star-count]').forEach(function (el) {
       el.textContent = data.stargazers_count;
     });
