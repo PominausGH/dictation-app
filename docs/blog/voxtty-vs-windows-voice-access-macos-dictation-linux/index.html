@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://analytics.daintytrading.com; connect-src 'self' https://analytics.daintytrading.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'">
+<title>How Does Linux Voice Dictation Compare to Windows and macOS? | Voxtty</title>
+<meta name="description" content="Windows Voice Access and macOS Dictation have deep OS integration Linux lacks — here's what that costs you, and what local-first tools trade for it.">
+<link rel="canonical" href="https://voxtty.com/blog/voxtty-vs-windows-voice-access-macos-dictation-linux/">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎙️</text></svg>">
+<meta property="og:type" content="article">
+<meta property="og:title" content="How Does Linux Voice Dictation Compare to Windows and macOS?">
+<meta property="og:description" content="Windows Voice Access and macOS Dictation have deep OS integration Linux lacks — here's what that costs you, and what local-first tools trade for it.">
+<meta property="og:url" content="https://voxtty.com/blog/voxtty-vs-windows-voice-access-macos-dictation-linux/">
+<meta property="article:published_time" content="2026-08-19">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "How Does Linux Voice Dictation Compare to Windows and macOS?",
+  "description": "Windows Voice Access and macOS Dictation have deep OS integration Linux lacks — here's what that costs you, and what local-first tools trade for it.",
+  "url": "https://voxtty.com/blog/voxtty-vs-windows-voice-access-macos-dictation-linux/",
+  "datePublished": "2026-08-19",
+  "author": { "@type": "Organization", "name": "Voxtty", "url": "https://voxtty.com" },
+  "publisher": { "@type": "Organization", "name": "Voxtty", "url": "https://voxtty.com" }
+}
+</script>
+<style>
+  :root {
+    --ground:#0B0E14; --surface:#12161F; --surface-2:#1A202B;
+    --ink:#E9EDF3; --muted:#9BA7B6; --faint:#8892A2; --border:#232B38;
+    --accent:#FF6A5A; --accent-ink:#FF8578; --accent-soft:#2A1613;
+    --teal:#43B8B2;
+    --mono:ui-monospace,"SF Mono","JetBrains Mono","Fira Code",Menlo,Consolas,monospace;
+    --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --shadow:0 2px 6px rgba(0,0,0,.3), 0 20px 50px rgba(0,0,0,.4);
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --ground:#F2F4F7; --surface:#FFFFFF; --surface-2:#F9FAFB;
+      --ink:#14181F; --muted:#57616E; --faint:#66707E; --border:#E2E6EC;
+      --accent:#DE4E3B; --accent-ink:#B63C2C; --accent-soft:#FBE6E1;
+      --teal:#0E7C7B;
+      --shadow:0 1px 2px rgba(20,30,45,.05), 0 16px 40px rgba(20,30,45,.09);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:#0B0E14; --surface:#12161F; --surface-2:#1A202B;
+    --ink:#E9EDF3; --muted:#9BA7B6; --faint:#8892A2; --border:#232B38;
+    --accent:#FF6A5A; --accent-ink:#FF8578; --accent-soft:#2A1613; --teal:#43B8B2;
+    --shadow:0 2px 6px rgba(0,0,0,.3), 0 20px 50px rgba(0,0,0,.4);
+  }
+  :root[data-theme="light"] {
+    --ground:#F2F4F7; --surface:#FFFFFF; --surface-2:#F9FAFB;
+    --ink:#14181F; --muted:#57616E; --faint:#66707E; --border:#E2E6EC;
+    --accent:#DE4E3B; --accent-ink:#B63C2C; --accent-soft:#FBE6E1; --teal:#0E7C7B;
+    --shadow:0 1px 2px rgba(20,30,45,.05), 0 16px 40px rgba(20,30,45,.09);
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--ground); color:var(--ink); font-family:var(--sans);
+    line-height:1.6; -webkit-font-smoothing:antialiased; }
+  a { color:inherit; }
+  .wrap { max-width:760px; margin:0 auto; padding:0 clamp(18px,4vw,36px); }
+  nav { display:flex; align-items:center; justify-content:space-between; padding:20px 0;
+    border-bottom:1px solid var(--border); max-width:1060px; margin:0 auto; padding-left:clamp(18px,4vw,36px); padding-right:clamp(18px,4vw,36px); }
+  .brand { font-family:var(--mono); font-size:19px; font-weight:600; letter-spacing:-.01em; text-decoration:none; color:var(--ink); }
+  .brand .cursor { display:inline-block; width:.6ch; color:var(--accent); }
+  .navlinks { display:flex; gap:22px; align-items:center; font-size:14px; }
+  .navlinks a { color:var(--muted); text-decoration:none; }
+  .navlinks a:hover, .navlinks a.active { color:var(--ink); }
+  .ghbtn { font-family:var(--mono); font-size:13px; border:1px solid var(--border);
+    border-radius:8px; padding:7px 13px; color:var(--ink); text-decoration:none; background:var(--surface); }
+  .breadcrumb { font-family:var(--mono); font-size:12.5px; color:var(--faint); margin:40px 0 18px; }
+  .breadcrumb a { color:var(--faint); }
+  .breadcrumb a:hover { color:var(--muted); }
+  .tag { display:inline-block; font-family:var(--mono); font-size:12px; color:var(--accent-ink);
+    background:var(--accent-soft); border-radius:999px; padding:4px 11px; margin-bottom:16px; }
+  h1 { font-size:clamp(28px,4.6vw,42px); line-height:1.1; letter-spacing:-.03em; margin:0 0 18px;
+    font-weight:700; text-wrap:balance; }
+  .meta { font-family:var(--mono); font-size:13px; color:var(--faint); display:flex; gap:16px; margin-bottom:44px; }
+  .body { padding-bottom:64px; }
+  .body p { color:var(--muted); font-size:17px; line-height:1.8; margin:0 0 22px; }
+  .body h2 { font-size:1.4rem; font-weight:700; letter-spacing:-.02em; margin:42px 0 14px; color:var(--ink); }
+  .body h3 { font-size:1.1rem; font-weight:600; margin:28px 0 10px; color:var(--ink); }
+  .body ul, .body ol { margin:0 0 22px 22px; color:var(--muted); font-size:17px; line-height:1.8; }
+  .body li { margin-bottom:8px; }
+  .body strong { color:var(--ink); font-weight:600; }
+  .body a { color:var(--accent-ink); }
+  .body a:hover { text-decoration:underline; }
+  .body blockquote { border-left:3px solid var(--accent); padding-left:20px; margin:28px 0; color:var(--faint); font-style:italic; }
+  .body code { font-family:var(--mono); font-size:.9em; background:var(--surface-2); padding:2px 6px; border-radius:4px; }
+  .cta { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:28px;
+    margin:16px 0 48px; box-shadow:var(--shadow); }
+  .cta h3 { margin:0 0 8px; font-size:18px; }
+  .cta p { color:var(--muted); margin:0 0 18px; font-size:15px; }
+  .btn { font-family:var(--mono); font-size:14px; font-weight:600; text-decoration:none;
+    border-radius:10px; padding:11px 18px; display:inline-flex; align-items:center; gap:9px;
+    background:#CE3E2B; color:#fff; }
+  .btn:hover { filter:brightness(1.06); }
+  .back-link { display:inline-flex; align-items:center; gap:6px; color:var(--faint); font-family:var(--mono);
+    font-size:13px; text-decoration:none; }
+  .back-link:hover { color:var(--muted); }
+  footer { border-top:1px solid var(--border); padding:36px 0 56px; max-width:1060px; margin:0 auto; }
+  footer .wrap { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:16px; padding:0 clamp(18px,4vw,36px); }
+  footer .brand { font-size:16px; }
+  footer .meta { font-family:var(--mono); font-size:12.5px; color:var(--faint); }
+  footer a { color:var(--muted); text-decoration:none; font-size:14px; }
+  footer a:hover { color:var(--ink); }
+  @media(max-width:700px) { .navlinks .hide { display:none; } }
+</style>
+</head>
+<body>
+<nav>
+  <a href="/" class="brand">voxtty<span class="cursor">.</span></a>
+  <div class="navlinks">
+    <a href="/blog/" class="active">Blog</a>
+    <a href="/#pricing" class="hide">Pricing</a>
+    <a class="ghbtn" href="https://github.com/PominausGH/voxtty">GitHub ↗</a>
+  </div>
+</nav>
+
+<div class="wrap">
+  <div class="breadcrumb"><a href="/blog/">Blog</a> / Comparisons</div>
+  <span class="tag">Comparisons</span>
+  <h1>How Does Linux Voice Dictation Compare to Windows and macOS?</h1>
+  <div class="meta">
+    <span>19 August 2026</span>
+    <span>4 min read</span>
+  </div>
+
+  <div class="body">
+    <p>Windows Voice Access and macOS Dictation get one thing Linux tools don't: they're built by the OS vendor directly into the accessibility stack, with years of tuning against a single, consistent set of UI conventions. Linux has no equivalent — no one company owns "the desktop," so no one has built a system-wide dictation layer that works identically across GNOME, KDE, and everything else. What a local-first Linux tool trades for that is control over where your audio actually goes.</p>
+
+<h2>Why Linux dictation has lagged behind</h2>
+<p>Windows and macOS can assume a single accessibility API, a single window manager's worth of text-field conventions, and a captive audience of developers building against Apple's or Microsoft's SDK. Linux has X11 and Wayland, a dozen actively maintained desktop environments, and no equivalent to Apple's Accessibility API or Microsoft's UI Automation that every app reliably implements.</p>
+<p>That fragmentation is the real reason "Linux dictation" has meant either nothing, or a shell script someone wrote for their own workflow. It's not that voice models don't work on Linux — faster-whisper and other on-device speech-to-text engines run fine. It's that getting recognized text into an arbitrary focused window, reliably, across compositors, has never had a standard path.</p>
+<p>There's a privacy angle too, and it's worth being specific rather than hand-wavy about it. macOS Dictation has historically sent audio to Apple's servers by default unless you turn on Enhanced Dictation for offline use. Windows' newer Voice Access leans more on-device than its predecessor did. Either way, you're trusting a vendor's current privacy posture, which can change with an OS update you didn't read the changelog for. On Linux, the tools that exist tend to be built by people who wanted the opposite guarantee.</p>
+
+<h2>What a Linux-native approach actually does instead</h2>
+<p>Without a shared accessibility API to hook into, Linux dictation tools generally work at a lower level: a global hotkey starts recording, voice activity detection decides when you've stopped talking, a local model transcribes the audio, and the resulting text gets typed into whatever has focus using a virtual keyboard layer rather than an app-specific integration.</p>
+<p>Voxtty follows that pattern. Press Alt+D, speak, and the words get typed into whatever app has focus — transcribed on-device with faster-whisper, so no audio leaves the machine. It runs as a systemd user service in the background rather than a GUI app you have to keep open, and on Wayland it uses <code>ydotool</code> to simulate keystrokes, since Wayland's security model deliberately blocks the old X11 approach of one app injecting input into another. There's also an opt-in cleanup step that can send the transcript <em>text</em> — never audio — to the Claude API to strip filler words like "um" and "uh"; it's off by default, and the base transcription pipeline never touches the network.</p>
+<p>If you want to see whether that combination — hotkey, local model, systemd service — fits your workflow, you can <a href="https://voxtty.com">Try Voxtty free</a>.</p>
+<p>This is a narrower feature set than what Windows or macOS ship out of the box. There's no "select paragraph," no "capitalize that," no voice-driven mouse control layered on top. What you get instead is a tool that does one thing — speech to typed text — without a vendor in the loop deciding what happens to the audio.</p>
+
+<h2>Where this breaks down</h2>
+<p>Be honest about the gaps. Windows Voice Access and macOS Dictation support spoken punctuation and formatting commands — "new paragraph," "delete that," "select last sentence" — because they're integrated deeply enough into the OS to know what "select" means in the current context. A hotkey-plus-transcription tool on Linux generally doesn't have that context; it types what you said, punctuation included if you say it explicitly, and text editing is still up to your keyboard.</p>
+<p>Whisper-based models also have real accuracy limits: strong accents, heavy background noise, and dense technical jargon all degrade results more than they would with a cloud STT engine trained on a much larger, continuously updated corpus. On-device transcription is not as fast or as forgiving as top-tier cloud speech recognition — it's a deliberate tradeoff, not a secret win.</p>
+<p>And Wayland support specifically depends on <code>ydotool</code> being installed and your user having the right permissions to write to <code>/dev/uinput</code>, which isn't always set up out of the box on every distro. If you're on a locked-down or minimal install, that's a setup step, not a given.</p>
+
+<h2>One thing to do today</h2>
+<p>Check whether your distro packages <code>ydotool</code> (or whether you're still on X11, where it isn't needed), then dictate a single paragraph of something you'd normally type — an email, a commit message, a Slack reply. Compare how much cleanup it needs against how long it took to say versus type. That's a more honest test than any spec sheet.</p>
+
+    <div class="cta">
+      <h3>Try Voxtty free</h3>
+      <p>Local-first voice dictation for Linux. Press Alt+D, speak, and your words land in whatever app has focus — nothing leaves your machine.</p>
+      <a href="https://voxtty.com" class="btn">Try Voxtty free →</a>
+    </div>
+
+    <a href="/blog/" class="back-link">← Back to blog</a>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <div class="brand">voxtty<span class="cursor">.</span></div>
+    <a href="https://github.com/PominausGH/voxtty">GitHub ↗</a>
+    <a href="/privacy.html">Privacy</a>
+    <span class="meta">local-first · linux-native · open-core</span>
+  </div>
+</footer>
+</body>
+</html>
