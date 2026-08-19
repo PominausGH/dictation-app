@@ -14,6 +14,7 @@ import signal
 import sys
 import threading
 import time
+from collections import deque
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
@@ -51,13 +52,13 @@ if sys.stderr is not None:
 
 _DEFAULTS: dict = {
     "microphone_name": "BRIO",
-    "whisper_model": "small.en",
+    "whisper_model": "medium.en",
     "whisper_initial_prompt": "",
     "sample_rate": 16000,
     "chunk_duration_ms": 30,
-    "silence_threshold": 0.8,
+    "silence_threshold": 1.2,
     "min_speech_frames": 15,
-    "no_speech_prob_threshold": 0.4,
+    "no_speech_prob_threshold": 0.25,
     "min_rms_energy": 80,
     "wake_word": "hey_jarvis",
     "wake_word_threshold": 0.75,
@@ -398,7 +399,10 @@ class VoxttyApp:
         min_chunks = int(0.4 * chunks_per_second)
         watchdog_timeout = CFG.get("watchdog_timeout", 30)
 
+        preroll_chunks = int(0.2 * chunks_per_second)
+
         audio_buffer: list[bytes] = []
+        preroll: deque[bytes] = deque(maxlen=preroll_chunks)
         silence_chunks = 0
         speech_detected = False
         speech_frame_count = 0
@@ -425,6 +429,7 @@ class VoxttyApp:
 
                 if self._check_wake_word(chunk):
                     audio_buffer.clear()
+                    preroll.clear()
                     silence_chunks = 0
                     speech_detected = False
                     speech_frame_count = 0
@@ -437,6 +442,11 @@ class VoxttyApp:
                 is_speech = vad.is_speech(chunk, SAMPLE_RATE)
 
                 if is_speech:
+                    if not speech_detected and preroll:
+                        # VAD lags a frame or two on soft onsets — recover the lead-in
+                        # audio so the first syllable isn't silently dropped.
+                        audio_buffer.extend(preroll)
+                        preroll.clear()
                     audio_buffer.append(chunk)
                     silence_chunks = 0
                     speech_detected = True
@@ -468,6 +478,8 @@ class VoxttyApp:
                         silence_chunks = 0
                         speech_detected = False
                         speech_frame_count = 0
+                else:
+                    preroll.append(chunk)
         finally:
             stream.stop_stream()
             stream.close()
