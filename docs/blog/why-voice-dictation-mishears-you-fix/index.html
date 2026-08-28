@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://analytics.daintytrading.com; connect-src 'self' https://analytics.daintytrading.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'">
+<title>Why Does My Voice Dictation Tool Keep Mishearing Me? | Voxtty</title>
+<meta name="description" content="Most dictation errors trace to mic gain, room acoustics, or model size — not the software. Here's how to fix each on Linux.">
+<link rel="canonical" href="https://voxtty.com/blog/why-voice-dictation-mishears-you-fix/">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎙️</text></svg>">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Why Does My Voice Dictation Tool Keep Mishearing Me?">
+<meta property="og:description" content="Most dictation errors trace to mic gain, room acoustics, or model size — not the software. Here's how to fix each on Linux.">
+<meta property="og:url" content="https://voxtty.com/blog/why-voice-dictation-mishears-you-fix/">
+<meta property="article:published_time" content="2026-08-28">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Why Does My Voice Dictation Tool Keep Mishearing Me?",
+  "description": "Most dictation errors trace to mic gain, room acoustics, or model size — not the software. Here's how to fix each on Linux.",
+  "url": "https://voxtty.com/blog/why-voice-dictation-mishears-you-fix/",
+  "datePublished": "2026-08-28",
+  "author": { "@type": "Organization", "name": "Voxtty", "url": "https://voxtty.com" },
+  "publisher": { "@type": "Organization", "name": "Voxtty", "url": "https://voxtty.com" }
+}
+</script>
+<style>
+  :root {
+    --ground:#0B0E14; --surface:#12161F; --surface-2:#1A202B;
+    --ink:#E9EDF3; --muted:#9BA7B6; --faint:#8892A2; --border:#232B38;
+    --accent:#FF6A5A; --accent-ink:#FF8578; --accent-soft:#2A1613;
+    --teal:#43B8B2;
+    --mono:ui-monospace,"SF Mono","JetBrains Mono","Fira Code",Menlo,Consolas,monospace;
+    --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --shadow:0 2px 6px rgba(0,0,0,.3), 0 20px 50px rgba(0,0,0,.4);
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --ground:#F2F4F7; --surface:#FFFFFF; --surface-2:#F9FAFB;
+      --ink:#14181F; --muted:#57616E; --faint:#66707E; --border:#E2E6EC;
+      --accent:#DE4E3B; --accent-ink:#B63C2C; --accent-soft:#FBE6E1;
+      --teal:#0E7C7B;
+      --shadow:0 1px 2px rgba(20,30,45,.05), 0 16px 40px rgba(20,30,45,.09);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:#0B0E14; --surface:#12161F; --surface-2:#1A202B;
+    --ink:#E9EDF3; --muted:#9BA7B6; --faint:#8892A2; --border:#232B38;
+    --accent:#FF6A5A; --accent-ink:#FF8578; --accent-soft:#2A1613; --teal:#43B8B2;
+    --shadow:0 2px 6px rgba(0,0,0,.3), 0 20px 50px rgba(0,0,0,.4);
+  }
+  :root[data-theme="light"] {
+    --ground:#F2F4F7; --surface:#FFFFFF; --surface-2:#F9FAFB;
+    --ink:#14181F; --muted:#57616E; --faint:#66707E; --border:#E2E6EC;
+    --accent:#DE4E3B; --accent-ink:#B63C2C; --accent-soft:#FBE6E1; --teal:#0E7C7B;
+    --shadow:0 1px 2px rgba(20,30,45,.05), 0 16px 40px rgba(20,30,45,.09);
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--ground); color:var(--ink); font-family:var(--sans);
+    line-height:1.6; -webkit-font-smoothing:antialiased; }
+  a { color:inherit; }
+  .wrap { max-width:760px; margin:0 auto; padding:0 clamp(18px,4vw,36px); }
+  nav { display:flex; align-items:center; justify-content:space-between; padding:20px 0;
+    border-bottom:1px solid var(--border); max-width:1060px; margin:0 auto; padding-left:clamp(18px,4vw,36px); padding-right:clamp(18px,4vw,36px); }
+  .brand { font-family:var(--mono); font-size:19px; font-weight:600; letter-spacing:-.01em; text-decoration:none; color:var(--ink); }
+  .brand .cursor { display:inline-block; width:.6ch; color:var(--accent); }
+  .navlinks { display:flex; gap:22px; align-items:center; font-size:14px; }
+  .navlinks a { color:var(--muted); text-decoration:none; }
+  .navlinks a:hover, .navlinks a.active { color:var(--ink); }
+  .ghbtn { font-family:var(--mono); font-size:13px; border:1px solid var(--border);
+    border-radius:8px; padding:7px 13px; color:var(--ink); text-decoration:none; background:var(--surface); }
+  .breadcrumb { font-family:var(--mono); font-size:12.5px; color:var(--faint); margin:40px 0 18px; }
+  .breadcrumb a { color:var(--faint); }
+  .breadcrumb a:hover { color:var(--muted); }
+  .tag { display:inline-block; font-family:var(--mono); font-size:12px; color:var(--accent-ink);
+    background:var(--accent-soft); border-radius:999px; padding:4px 11px; margin-bottom:16px; }
+  h1 { font-size:clamp(28px,4.6vw,42px); line-height:1.1; letter-spacing:-.03em; margin:0 0 18px;
+    font-weight:700; text-wrap:balance; }
+  .meta { font-family:var(--mono); font-size:13px; color:var(--faint); display:flex; gap:16px; margin-bottom:44px; }
+  .body { padding-bottom:64px; }
+  .body p { color:var(--muted); font-size:17px; line-height:1.8; margin:0 0 22px; }
+  .body h2 { font-size:1.4rem; font-weight:700; letter-spacing:-.02em; margin:42px 0 14px; color:var(--ink); }
+  .body h3 { font-size:1.1rem; font-weight:600; margin:28px 0 10px; color:var(--ink); }
+  .body ul, .body ol { margin:0 0 22px 22px; color:var(--muted); font-size:17px; line-height:1.8; }
+  .body li { margin-bottom:8px; }
+  .body strong { color:var(--ink); font-weight:600; }
+  .body a { color:var(--accent-ink); }
+  .body a:hover { text-decoration:underline; }
+  .body blockquote { border-left:3px solid var(--accent); padding-left:20px; margin:28px 0; color:var(--faint); font-style:italic; }
+  .body code { font-family:var(--mono); font-size:.9em; background:var(--surface-2); padding:2px 6px; border-radius:4px; }
+  .cta { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:28px;
+    margin:16px 0 48px; box-shadow:var(--shadow); }
+  .cta h3 { margin:0 0 8px; font-size:18px; }
+  .cta p { color:var(--muted); margin:0 0 18px; font-size:15px; }
+  .btn { font-family:var(--mono); font-size:14px; font-weight:600; text-decoration:none;
+    border-radius:10px; padding:11px 18px; display:inline-flex; align-items:center; gap:9px;
+    background:#CE3E2B; color:#fff; }
+  .btn:hover { filter:brightness(1.06); }
+  .back-link { display:inline-flex; align-items:center; gap:6px; color:var(--faint); font-family:var(--mono);
+    font-size:13px; text-decoration:none; }
+  .back-link:hover { color:var(--muted); }
+  footer { border-top:1px solid var(--border); padding:36px 0 56px; max-width:1060px; margin:0 auto; }
+  footer .wrap { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:16px; padding:0 clamp(18px,4vw,36px); }
+  footer .brand { font-size:16px; }
+  footer .meta { font-family:var(--mono); font-size:12.5px; color:var(--faint); }
+  footer a { color:var(--muted); text-decoration:none; font-size:14px; }
+  footer a:hover { color:var(--ink); }
+  @media(max-width:700px) { .navlinks .hide { display:none; } }
+</style>
+</head>
+<body>
+<nav>
+  <a href="/" class="brand">voxtty<span class="cursor">.</span></a>
+  <div class="navlinks">
+    <a href="/blog/" class="active">Blog</a>
+    <a href="/#pricing" class="hide">Pricing</a>
+    <a class="ghbtn" href="https://github.com/PominausGH/voxtty">GitHub ↗</a>
+  </div>
+</nav>
+
+<div class="wrap">
+  <div class="breadcrumb"><a href="/blog/">Blog</a> / Guides</div>
+  <span class="tag">Guides</span>
+  <h1>Why Does My Voice Dictation Tool Keep Mishearing Me?</h1>
+  <div class="meta">
+    <span>28 August 2026</span>
+    <span>5 min read</span>
+  </div>
+
+  <div class="body">
+    <p>Most mistranscriptions come from four places: microphone gain that's clipping or too quiet, room acoustics bouncing your voice around, a Whisper model too small for the job, or vocabulary — names, jargon, product terms — the model has never seen. Fix those four in order and the error rate usually drops enough to make dictation usable for real work, not just short commands.</p>
+
+<p>It's rarely the transcription engine itself that's broken. Whisper and its derivatives are trained on a huge corpus of general speech, so they're good at "the" and "meeting" and bad at "Kubernetes" or your colleague's surname. Treating every misheard word as a software bug means you keep fighting symptoms instead of the actual input problem.</p>
+
+<h2>Why bad input beats good models every time</h2>
+
+<p>Speech recognition, on-device or cloud, is a garbage-in-garbage-out system. A model can only work with the audio it's handed — if that audio is clipped, muffled by room echo, or picking up your fan more than your voice, no amount of parameter count fixes it downstream.</p>
+
+<p>This matters more for on-device tools than cloud ones, and it's worth being honest about it. Cloud speech APIs run enormous models with server-grade compute behind them; a local Whisper model on your laptop is working with a fraction of that capacity. That's the tradeoff for keeping your voice off someone else's server — you get privacy and offline reliability, but you also need to feed the model cleaner audio to hit the same accuracy. The good news is that cleaning up your input is a five-minute fix, not a hardware upgrade.</p>
+
+<h2>The four things actually causing your errors</h2>
+
+<p><strong>1. Microphone gain.</strong> Open your system's sound settings (or <code>pavucontrol</code> on PulseAudio/PipeWire systems) and watch the input level while you talk normally. If it's pinned in the red, you're clipping — the waveform is getting cut off and the model is guessing at missing information. If it barely moves, the model is transcribing mostly noise floor. Aim for peaks in the upper-middle of the meter, not maxed out.</p>
+
+<p><strong>2. Microphone choice and position.</strong> Laptop built-in mics are omnidirectional and pick up keyboard clatter, fan noise, and room reflections along with your voice. A cheap USB or headset mic with a cardioid pickup pattern, positioned 10-15cm from your mouth, will outperform a built-in mic on a $2,000 laptop every time. This is the single highest-leverage fix most people skip.</p>
+
+<p><strong>3. Room acoustics.</strong> Hard, parallel surfaces — bare walls, glass desks, empty rooms — create reflections that smear consonants together, which is exactly what voice activity detection (VAD) and the transcription model both struggle with. You don't need acoustic foam; a rug, curtains, or even a bookshelf behind you cuts reflections enough to matter. Test by clapping once in your room — a long, ringy decay means the room is working against you.</p>
+
+<p><strong>4. Model size.</strong> Whisper ships in tiers — tiny, base, small, medium, large — and there's a real accuracy-for-speed tradeoff. Tiny and base are fast enough to feel instant but miss more on accents, fast speech, and jargon. Small and medium are noticeably more accurate but take longer to transcribe and use more CPU/GPU. If you're on a machine with a decent GPU or even a modern CPU, bumping up a tier is often the single biggest accuracy gain available to you, at the cost of a slightly longer pause after you stop talking.</p>
+
+<h2>Custom dictionaries fix what model size can't</h2>
+
+<p>No amount of model size fixes a word the model has never encountered in training. Product names, coworkers' names, internal jargon, and technical terms outside common usage will get mangled by even the largest Whisper model, because the training data simply didn't contain them at the frequency needed to learn them reliably.</p>
+
+<p>The fix is a word-replacement dictionary — a simple find-and-replace layer that runs after transcription. You type "kubernetes" gets misheard as "cooper netties" once, add a rule mapping it back, and it's fixed permanently for every future dictation session. This is mechanically simple — rule-based string substitution, not another AI call — which is exactly why it's reliable and works offline. Voxtty runs this as part of its post-processing: press Alt+D, speak, faster-whisper transcribes on-device, and a rule-based cleanup pass (plus optional custom replacements) fixes recurring misses before the text lands in whatever app has focus. If dictation accuracy is the thing standing between you and using voice input daily, <a href="https://voxtty.com">try Voxtty free</a> and see whether the gain/acoustics/model-size combination gets you there.</p>
+
+<h2>Where this still breaks down</h2>
+
+<p>Be honest with yourself about a few hard limits. Strong regional accents and non-native speech patterns are still where local Whisper models lag furthest behind top-tier cloud STT — the training data skews toward standard American and British English, and a small local model won't close that gap the way a much larger cloud model might. Background noise from open-plan offices, other people talking, or reverberant rooms will degrade any model, local or cloud.</p>
+
+<p>Rapid speech, mumbling, and mid-sentence self-correction ("send it to— actually cc Dana too") also trip up VAD-based systems, since the silence detection that decides where one utterance ends and the next begins wasn't designed to parse interruptions. And a wake-word style "always listening" mode is inherently harder to get right than a manual hotkey — it has to distinguish your trigger phrase from every other sound in the room, which is why push-to-talk hotkeys like Alt+D remain more reliable than always-on listening for accuracy-sensitive work.</p>
+
+<h2>One thing to do today</h2>
+
+<p>Before touching any settings, do the clap test in your usual dictation spot, then check your mic's input level while talking at normal volume. If either looks off — long echo decay or a meter pinned in the red — fix that first. It's a five-minute change that fixes more mistranscriptions than any model upgrade will.</p>
+
+    <div class="cta">
+      <h3>Try Voxtty free</h3>
+      <p>Local-first voice dictation for Linux. Press Alt+D, speak, and your words land in whatever app has focus — nothing leaves your machine.</p>
+      <a href="https://voxtty.com" class="btn">Try Voxtty free →</a>
+    </div>
+
+    <div style="margin-top:56px;padding-top:40px;border-top:1px solid rgba(128,128,128,.25)"><h3 style="font-size:1.1rem;font-weight:700;margin-bottom:20px">Related Articles</h3><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px"><a href="https://voxtty.com/blog/subscription-dictation-apps-real-cost/" style="display:block;padding:18px;border:1px solid rgba(128,128,128,.25);border-radius:12px;text-decoration:none;color:inherit"><span style="font-size:.75rem;font-weight:600;color:#e11d48;text-transform:uppercase;letter-spacing:.03em">Comparisons</span><div style="font-weight:700;margin-top:6px;line-height:1.35">The Real Cost of Subscription Dictation Apps for Heavy Users</div></a><a href="https://voxtty.com/blog/whisper-accuracy-code-comments-commit-messages/" style="display:block;padding:18px;border:1px solid rgba(128,128,128,.25);border-radius:12px;text-decoration:none;color:inherit"><span style="font-size:.75rem;font-weight:600;color:#e11d48;text-transform:uppercase;letter-spacing:.03em">Dictation</span><div style="font-weight:700;margin-top:6px;line-height:1.35">How Accurate Is Whisper for Code Comments and Commit Messages?</div></a><a href="https://voxtty.com/blog/is-it-safe-to-dictate-passwords-sensitive-info/" style="display:block;padding:18px;border:1px solid rgba(128,128,128,.25);border-radius:12px;text-decoration:none;color:inherit"><span style="font-size:.75rem;font-weight:600;color:#e11d48;text-transform:uppercase;letter-spacing:.03em">Privacy</span><div style="font-weight:700;margin-top:6px;line-height:1.35">Is It Safe to Dictate Passwords Out Loud on Linux?</div></a><a href="https://voxtty.com/blog/voice-activity-detection-dictation/" style="display:block;padding:18px;border:1px solid rgba(128,128,128,.25);border-radius:12px;text-decoration:none;color:inherit"><span style="font-size:.75rem;font-weight:600;color:#e11d48;text-transform:uppercase;letter-spacing:.03em">Dictation</span><div style="font-weight:700;margin-top:6px;line-height:1.35">What Is Voice Activity Detection, and Why Dictation Needs It</div></a></div></div>
+
+    <a href="/blog/" class="back-link">← Back to blog</a>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <div class="brand">voxtty<span class="cursor">.</span></div>
+    <a href="https://github.com/PominausGH/voxtty">GitHub ↗</a>
+    <a href="/privacy.html">Privacy</a>
+    <span class="meta">local-first · linux-native · open-core</span>
+  </div>
+</footer>
+</body>
+</html>

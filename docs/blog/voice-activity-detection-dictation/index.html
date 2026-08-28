@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://analytics.daintytrading.com; connect-src 'self' https://analytics.daintytrading.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'">
+<title>What Is Voice Activity Detection, and Why Dictation Needs It | Voxtty</title>
+<meta name="description" content="VAD detects speech start and stop by analysing audio, not a countdown — here's how it works and why fixed-timeout dictation tools feel clunky.">
+<link rel="canonical" href="https://voxtty.com/blog/voice-activity-detection-dictation/">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎙️</text></svg>">
+<meta property="og:type" content="article">
+<meta property="og:title" content="What Is Voice Activity Detection, and Why Dictation Needs It">
+<meta property="og:description" content="VAD detects speech start and stop by analysing audio, not a countdown — here's how it works and why fixed-timeout dictation tools feel clunky.">
+<meta property="og:url" content="https://voxtty.com/blog/voice-activity-detection-dictation/">
+<meta property="article:published_time" content="2026-08-28">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "What Is Voice Activity Detection, and Why Dictation Needs It",
+  "description": "VAD detects speech start and stop by analysing audio, not a countdown — here's how it works and why fixed-timeout dictation tools feel clunky.",
+  "url": "https://voxtty.com/blog/voice-activity-detection-dictation/",
+  "datePublished": "2026-08-28",
+  "author": { "@type": "Organization", "name": "Voxtty", "url": "https://voxtty.com" },
+  "publisher": { "@type": "Organization", "name": "Voxtty", "url": "https://voxtty.com" }
+}
+</script>
+<style>
+  :root {
+    --ground:#0B0E14; --surface:#12161F; --surface-2:#1A202B;
+    --ink:#E9EDF3; --muted:#9BA7B6; --faint:#8892A2; --border:#232B38;
+    --accent:#FF6A5A; --accent-ink:#FF8578; --accent-soft:#2A1613;
+    --teal:#43B8B2;
+    --mono:ui-monospace,"SF Mono","JetBrains Mono","Fira Code",Menlo,Consolas,monospace;
+    --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --shadow:0 2px 6px rgba(0,0,0,.3), 0 20px 50px rgba(0,0,0,.4);
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --ground:#F2F4F7; --surface:#FFFFFF; --surface-2:#F9FAFB;
+      --ink:#14181F; --muted:#57616E; --faint:#66707E; --border:#E2E6EC;
+      --accent:#DE4E3B; --accent-ink:#B63C2C; --accent-soft:#FBE6E1;
+      --teal:#0E7C7B;
+      --shadow:0 1px 2px rgba(20,30,45,.05), 0 16px 40px rgba(20,30,45,.09);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:#0B0E14; --surface:#12161F; --surface-2:#1A202B;
+    --ink:#E9EDF3; --muted:#9BA7B6; --faint:#8892A2; --border:#232B38;
+    --accent:#FF6A5A; --accent-ink:#FF8578; --accent-soft:#2A1613; --teal:#43B8B2;
+    --shadow:0 2px 6px rgba(0,0,0,.3), 0 20px 50px rgba(0,0,0,.4);
+  }
+  :root[data-theme="light"] {
+    --ground:#F2F4F7; --surface:#FFFFFF; --surface-2:#F9FAFB;
+    --ink:#14181F; --muted:#57616E; --faint:#66707E; --border:#E2E6EC;
+    --accent:#DE4E3B; --accent-ink:#B63C2C; --accent-soft:#FBE6E1; --teal:#0E7C7B;
+    --shadow:0 1px 2px rgba(20,30,45,.05), 0 16px 40px rgba(20,30,45,.09);
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--ground); color:var(--ink); font-family:var(--sans);
+    line-height:1.6; -webkit-font-smoothing:antialiased; }
+  a { color:inherit; }
+  .wrap { max-width:760px; margin:0 auto; padding:0 clamp(18px,4vw,36px); }
+  nav { display:flex; align-items:center; justify-content:space-between; padding:20px 0;
+    border-bottom:1px solid var(--border); max-width:1060px; margin:0 auto; padding-left:clamp(18px,4vw,36px); padding-right:clamp(18px,4vw,36px); }
+  .brand { font-family:var(--mono); font-size:19px; font-weight:600; letter-spacing:-.01em; text-decoration:none; color:var(--ink); }
+  .brand .cursor { display:inline-block; width:.6ch; color:var(--accent); }
+  .navlinks { display:flex; gap:22px; align-items:center; font-size:14px; }
+  .navlinks a { color:var(--muted); text-decoration:none; }
+  .navlinks a:hover, .navlinks a.active { color:var(--ink); }
+  .ghbtn { font-family:var(--mono); font-size:13px; border:1px solid var(--border);
+    border-radius:8px; padding:7px 13px; color:var(--ink); text-decoration:none; background:var(--surface); }
+  .breadcrumb { font-family:var(--mono); font-size:12.5px; color:var(--faint); margin:40px 0 18px; }
+  .breadcrumb a { color:var(--faint); }
+  .breadcrumb a:hover { color:var(--muted); }
+  .tag { display:inline-block; font-family:var(--mono); font-size:12px; color:var(--accent-ink);
+    background:var(--accent-soft); border-radius:999px; padding:4px 11px; margin-bottom:16px; }
+  h1 { font-size:clamp(28px,4.6vw,42px); line-height:1.1; letter-spacing:-.03em; margin:0 0 18px;
+    font-weight:700; text-wrap:balance; }
+  .meta { font-family:var(--mono); font-size:13px; color:var(--faint); display:flex; gap:16px; margin-bottom:44px; }
+  .body { padding-bottom:64px; }
+  .body p { color:var(--muted); font-size:17px; line-height:1.8; margin:0 0 22px; }
+  .body h2 { font-size:1.4rem; font-weight:700; letter-spacing:-.02em; margin:42px 0 14px; color:var(--ink); }
+  .body h3 { font-size:1.1rem; font-weight:600; margin:28px 0 10px; color:var(--ink); }
+  .body ul, .body ol { margin:0 0 22px 22px; color:var(--muted); font-size:17px; line-height:1.8; }
+  .body li { margin-bottom:8px; }
+  .body strong { color:var(--ink); font-weight:600; }
+  .body a { color:var(--accent-ink); }
+  .body a:hover { text-decoration:underline; }
+  .body blockquote { border-left:3px solid var(--accent); padding-left:20px; margin:28px 0; color:var(--faint); font-style:italic; }
+  .body code { font-family:var(--mono); font-size:.9em; background:var(--surface-2); padding:2px 6px; border-radius:4px; }
+  .cta { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:28px;
+    margin:16px 0 48px; box-shadow:var(--shadow); }
+  .cta h3 { margin:0 0 8px; font-size:18px; }
+  .cta p { color:var(--muted); margin:0 0 18px; font-size:15px; }
+  .btn { font-family:var(--mono); font-size:14px; font-weight:600; text-decoration:none;
+    border-radius:10px; padding:11px 18px; display:inline-flex; align-items:center; gap:9px;
+    background:#CE3E2B; color:#fff; }
+  .btn:hover { filter:brightness(1.06); }
+  .back-link { display:inline-flex; align-items:center; gap:6px; color:var(--faint); font-family:var(--mono);
+    font-size:13px; text-decoration:none; }
+  .back-link:hover { color:var(--muted); }
+  footer { border-top:1px solid var(--border); padding:36px 0 56px; max-width:1060px; margin:0 auto; }
+  footer .wrap { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:16px; padding:0 clamp(18px,4vw,36px); }
+  footer .brand { font-size:16px; }
+  footer .meta { font-family:var(--mono); font-size:12.5px; color:var(--faint); }
+  footer a { color:var(--muted); text-decoration:none; font-size:14px; }
+  footer a:hover { color:var(--ink); }
+  @media(max-width:700px) { .navlinks .hide { display:none; } }
+</style>
+</head>
+<body>
+<nav>
+  <a href="/" class="brand">voxtty<span class="cursor">.</span></a>
+  <div class="navlinks">
+    <a href="/blog/" class="active">Blog</a>
+    <a href="/#pricing" class="hide">Pricing</a>
+    <a class="ghbtn" href="https://github.com/PominausGH/voxtty">GitHub ↗</a>
+  </div>
+</nav>
+
+<div class="wrap">
+  <div class="breadcrumb"><a href="/blog/">Blog</a> / Dictation</div>
+  <span class="tag">Dictation</span>
+  <h1>What Is Voice Activity Detection, and Why Dictation Needs It</h1>
+  <div class="meta">
+    <span>28 August 2026</span>
+    <span>5 min read</span>
+  </div>
+
+  <div class="body">
+    <p>Voice activity detection (VAD) is the process a dictation tool uses to figure out, from the raw audio signal, when you've started talking and when you've stopped — without relying on a fixed clock. Instead of waiting for "3 seconds of silence" to decide you're done, VAD models the audio itself: energy levels, spectral shape, sometimes a small neural classifier trained to distinguish speech from breathing, keyboard clatter, or a fridge compressor. That distinction is why some dictation tools feel like they're keeping up with you and others feel like they're fighting you.</p>
+
+<h2>Why fixed timeouts feel wrong</h2>
+<p>A fixed-timeout approach is simple to build: start recording, wait N seconds after audio drops below some volume, then stop and transcribe. The problem is that human speech doesn't move at a constant pace. You pause to think mid-sentence, especially when dictating something technical — a variable name, a clause you're still constructing in your head.</p>
+<p>Set the timeout short and the tool cuts you off mid-thought, splitting one sentence into two garbled fragments. Set it long and you get dead air at the end of every utterance — a beat of silence before the text appears, which breaks the flow of typing at speed. Neither failure mode is rare; they're the default behaviour of any timer-based cutoff, because a timer can't tell the difference between "I'm thinking" and "I'm finished."</p>
+
+<h2>How VAD actually decides</h2>
+<p>Real VAD systems work on short audio frames — typically 10 to 30 milliseconds — and classify each one as speech or non-speech. Simple implementations use signal energy and zero-crossing rate: speech has a distinctive energy pattern and a spectral signature different from silence or steady background noise. More capable ones use a small trained model (this is the approach in tools like Silero VAD, which faster-whisper's pipeline commonly pairs with) that's been trained on labelled speech and non-speech audio to make that call frame by frame.</p>
+<p>The output isn't just a binary flag — it's a stream of decisions that gets smoothed with a bit of hysteresis. Most implementations require several consecutive speech frames before declaring "speech started," which avoids triggering on a single cough or a chair creak. On the tail end, they apply a short "hangover" window — holding the speech state open for a few hundred milliseconds after audio drops — so a natural mid-sentence pause doesn't get read as the end of your utterance.</p>
+<p>This is the mechanism Voxtty relies on: press Alt+D, start talking, and VAD tracks your actual speech boundaries rather than counting down a timer. Recording stops when you stop talking, not when an arbitrary clock expires, and the audio is transcribed on-device with faster-whisper before the text lands wherever your cursor is. If you want to see how that feels in practice, <a href="https://voxtty.com">try Voxtty free</a>.</p>
+
+<h2>The sensitivity tradeoff</h2>
+<p>VAD sensitivity is a tuning knob, and every position on it trades one failure mode for another. Set it aggressive — quick to detect speech end — and you get fast, snappy transcription, but you'll clip the tail off sentences that end quietly, and a sigh or a sniff can look enough like the start of speech to trigger a false start. Set it conservative and you get fewer false starts and cleaner sentence boundaries, but longer hangover time means more dead air waiting for silence to confirm you're actually done.</p>
+<p>There's no universally correct setting because it depends on how you talk. Someone who dictates in short, clipped commands wants a tighter hangover window. Someone composing longer, more considered prose — with natural thinking pauses — wants more slack before the tool decides they've finished.</p>
+
+<h2>Where VAD struggles</h2>
+<p>VAD isn't perfect, and it's worth being upfront about where it breaks down. Noisy environments are the main one: a running fan, traffic through an open window, or a mechanical keyboard's clatter can sit close enough to speech-like energy patterns that energy-based VAD gets confused, either triggering falsely or failing to detect quieter speech underneath the noise. Neural VAD models handle this better than pure energy thresholds, but no model is immune to a genuinely loud room.</p>
+<p>Long, deliberate pauses mid-thought — the kind where you stop for several seconds to figure out the next sentence — are also a genuine edge case, because any hangover window has to end somewhere, and a wait long enough to cover every possible pause would make every dictation session feel sluggish. And VAD only decides <em>when</em> you're speaking, not <em>what</em> you said — accented speech, jargon, or crosstalk with someone else in the room are transcription accuracy problems, not VAD problems, and Whisper models have known limits there too.</p>
+
+<h2>One thing to try today</h2>
+<p>If you already dictate on Linux, or you're curious whether it's worth the switch from typing, notice the next time a tool cuts you off mid-sentence or leaves a beat of silence before your words appear — that's VAD tuning, not bad luck. Try speaking one paragraph at a natural pace, including a mid-sentence pause, and see whether the tool keeps up or breaks it into fragments. That single test tells you more about a dictation tool's VAD than any spec sheet.</p>
+
+    <div class="cta">
+      <h3>Try Voxtty free</h3>
+      <p>Local-first voice dictation for Linux. Press Alt+D, speak, and your words land in whatever app has focus — nothing leaves your machine.</p>
+      <a href="https://voxtty.com" class="btn">Try Voxtty free →</a>
+    </div>
+
+    <div style="margin-top:56px;padding-top:40px;border-top:1px solid rgba(128,128,128,.25)"><h3 style="font-size:1.1rem;font-weight:700;margin-bottom:20px">Related Articles</h3><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px"><a href="https://voxtty.com/blog/voice-dictation-rsi-typing-fatigue/" style="display:block;padding:18px;border:1px solid rgba(128,128,128,.25);border-radius:12px;text-decoration:none;color:inherit"><span style="font-size:.75rem;font-weight:600;color:#e11d48;text-transform:uppercase;letter-spacing:.03em">Productivity</span><div style="font-weight:700;margin-top:6px;line-height:1.35">Voice Dictation for RSI and Typing Fatigue</div></a><a href="https://voxtty.com/blog/voxtty-vs-windows-voice-access-macos-dictation-linux/" style="display:block;padding:18px;border:1px solid rgba(128,128,128,.25);border-radius:12px;text-decoration:none;color:inherit"><span style="font-size:.75rem;font-weight:600;color:#e11d48;text-transform:uppercase;letter-spacing:.03em">Comparisons</span><div style="font-weight:700;margin-top:6px;line-height:1.35">How Does Linux Voice Dictation Compare to Windows and macOS?</div></a><a href="https://voxtty.com/blog/voice-dictation-vs-typing-speed-comparison/" style="display:block;padding:18px;border:1px solid rgba(128,128,128,.25);border-radius:12px;text-decoration:none;color:inherit"><span style="font-size:.75rem;font-weight:600;color:#e11d48;text-transform:uppercase;letter-spacing:.03em">Productivity</span><div style="font-weight:700;margin-top:6px;line-height:1.35">Voice Dictation vs Typing: What&#x27;s Actually Faster?</div></a><a href="https://voxtty.com/blog/global-voice-dictation-linux-wayland-x11/" style="display:block;padding:18px;border:1px solid rgba(128,128,128,.25);border-radius:12px;text-decoration:none;color:inherit"><span style="font-size:.75rem;font-weight:600;color:#e11d48;text-transform:uppercase;letter-spacing:.03em">Linux</span><div style="font-weight:700;margin-top:6px;line-height:1.35">How to Set Up Global Voice Dictation on Linux (Wayland or X11)</div></a></div></div>
+
+    <a href="/blog/" class="back-link">← Back to blog</a>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <div class="brand">voxtty<span class="cursor">.</span></div>
+    <a href="https://github.com/PominausGH/voxtty">GitHub ↗</a>
+    <a href="/privacy.html">Privacy</a>
+    <span class="meta">local-first · linux-native · open-core</span>
+  </div>
+</footer>
+</body>
+</html>

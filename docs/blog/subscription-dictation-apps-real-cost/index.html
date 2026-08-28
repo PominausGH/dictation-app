@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://analytics.daintytrading.com; connect-src 'self' https://analytics.daintytrading.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'">
+<title>The Real Cost of Subscription Dictation Apps for Heavy Users | Voxtty</title>
+<meta name="description" content="Per-minute cloud dictation pricing quietly adds up for writers and support staff who talk for hours — here's what it costs, and what "free" costs instead.">
+<link rel="canonical" href="https://voxtty.com/blog/subscription-dictation-apps-real-cost/">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎙️</text></svg>">
+<meta property="og:type" content="article">
+<meta property="og:title" content="The Real Cost of Subscription Dictation Apps for Heavy Users">
+<meta property="og:description" content="Per-minute cloud dictation pricing quietly adds up for writers and support staff who talk for hours — here's what it costs, and what "free" costs instead.">
+<meta property="og:url" content="https://voxtty.com/blog/subscription-dictation-apps-real-cost/">
+<meta property="article:published_time" content="2026-08-28">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "The Real Cost of Subscription Dictation Apps for Heavy Users",
+  "description": "Per-minute cloud dictation pricing quietly adds up for writers and support staff who talk for hours — here's what it costs, and what "free" costs instead.",
+  "url": "https://voxtty.com/blog/subscription-dictation-apps-real-cost/",
+  "datePublished": "2026-08-28",
+  "author": { "@type": "Organization", "name": "Voxtty", "url": "https://voxtty.com" },
+  "publisher": { "@type": "Organization", "name": "Voxtty", "url": "https://voxtty.com" }
+}
+</script>
+<style>
+  :root {
+    --ground:#0B0E14; --surface:#12161F; --surface-2:#1A202B;
+    --ink:#E9EDF3; --muted:#9BA7B6; --faint:#8892A2; --border:#232B38;
+    --accent:#FF6A5A; --accent-ink:#FF8578; --accent-soft:#2A1613;
+    --teal:#43B8B2;
+    --mono:ui-monospace,"SF Mono","JetBrains Mono","Fira Code",Menlo,Consolas,monospace;
+    --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --shadow:0 2px 6px rgba(0,0,0,.3), 0 20px 50px rgba(0,0,0,.4);
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --ground:#F2F4F7; --surface:#FFFFFF; --surface-2:#F9FAFB;
+      --ink:#14181F; --muted:#57616E; --faint:#66707E; --border:#E2E6EC;
+      --accent:#DE4E3B; --accent-ink:#B63C2C; --accent-soft:#FBE6E1;
+      --teal:#0E7C7B;
+      --shadow:0 1px 2px rgba(20,30,45,.05), 0 16px 40px rgba(20,30,45,.09);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:#0B0E14; --surface:#12161F; --surface-2:#1A202B;
+    --ink:#E9EDF3; --muted:#9BA7B6; --faint:#8892A2; --border:#232B38;
+    --accent:#FF6A5A; --accent-ink:#FF8578; --accent-soft:#2A1613; --teal:#43B8B2;
+    --shadow:0 2px 6px rgba(0,0,0,.3), 0 20px 50px rgba(0,0,0,.4);
+  }
+  :root[data-theme="light"] {
+    --ground:#F2F4F7; --surface:#FFFFFF; --surface-2:#F9FAFB;
+    --ink:#14181F; --muted:#57616E; --faint:#66707E; --border:#E2E6EC;
+    --accent:#DE4E3B; --accent-ink:#B63C2C; --accent-soft:#FBE6E1; --teal:#0E7C7B;
+    --shadow:0 1px 2px rgba(20,30,45,.05), 0 16px 40px rgba(20,30,45,.09);
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--ground); color:var(--ink); font-family:var(--sans);
+    line-height:1.6; -webkit-font-smoothing:antialiased; }
+  a { color:inherit; }
+  .wrap { max-width:760px; margin:0 auto; padding:0 clamp(18px,4vw,36px); }
+  nav { display:flex; align-items:center; justify-content:space-between; padding:20px 0;
+    border-bottom:1px solid var(--border); max-width:1060px; margin:0 auto; padding-left:clamp(18px,4vw,36px); padding-right:clamp(18px,4vw,36px); }
+  .brand { font-family:var(--mono); font-size:19px; font-weight:600; letter-spacing:-.01em; text-decoration:none; color:var(--ink); }
+  .brand .cursor { display:inline-block; width:.6ch; color:var(--accent); }
+  .navlinks { display:flex; gap:22px; align-items:center; font-size:14px; }
+  .navlinks a { color:var(--muted); text-decoration:none; }
+  .navlinks a:hover, .navlinks a.active { color:var(--ink); }
+  .ghbtn { font-family:var(--mono); font-size:13px; border:1px solid var(--border);
+    border-radius:8px; padding:7px 13px; color:var(--ink); text-decoration:none; background:var(--surface); }
+  .breadcrumb { font-family:var(--mono); font-size:12.5px; color:var(--faint); margin:40px 0 18px; }
+  .breadcrumb a { color:var(--faint); }
+  .breadcrumb a:hover { color:var(--muted); }
+  .tag { display:inline-block; font-family:var(--mono); font-size:12px; color:var(--accent-ink);
+    background:var(--accent-soft); border-radius:999px; padding:4px 11px; margin-bottom:16px; }
+  h1 { font-size:clamp(28px,4.6vw,42px); line-height:1.1; letter-spacing:-.03em; margin:0 0 18px;
+    font-weight:700; text-wrap:balance; }
+  .meta { font-family:var(--mono); font-size:13px; color:var(--faint); display:flex; gap:16px; margin-bottom:44px; }
+  .body { padding-bottom:64px; }
+  .body p { color:var(--muted); font-size:17px; line-height:1.8; margin:0 0 22px; }
+  .body h2 { font-size:1.4rem; font-weight:700; letter-spacing:-.02em; margin:42px 0 14px; color:var(--ink); }
+  .body h3 { font-size:1.1rem; font-weight:600; margin:28px 0 10px; color:var(--ink); }
+  .body ul, .body ol { margin:0 0 22px 22px; color:var(--muted); font-size:17px; line-height:1.8; }
+  .body li { margin-bottom:8px; }
+  .body strong { color:var(--ink); font-weight:600; }
+  .body a { color:var(--accent-ink); }
+  .body a:hover { text-decoration:underline; }
+  .body blockquote { border-left:3px solid var(--accent); padding-left:20px; margin:28px 0; color:var(--faint); font-style:italic; }
+  .body code { font-family:var(--mono); font-size:.9em; background:var(--surface-2); padding:2px 6px; border-radius:4px; }
+  .cta { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:28px;
+    margin:16px 0 48px; box-shadow:var(--shadow); }
+  .cta h3 { margin:0 0 8px; font-size:18px; }
+  .cta p { color:var(--muted); margin:0 0 18px; font-size:15px; }
+  .btn { font-family:var(--mono); font-size:14px; font-weight:600; text-decoration:none;
+    border-radius:10px; padding:11px 18px; display:inline-flex; align-items:center; gap:9px;
+    background:#CE3E2B; color:#fff; }
+  .btn:hover { filter:brightness(1.06); }
+  .back-link { display:inline-flex; align-items:center; gap:6px; color:var(--faint); font-family:var(--mono);
+    font-size:13px; text-decoration:none; }
+  .back-link:hover { color:var(--muted); }
+  footer { border-top:1px solid var(--border); padding:36px 0 56px; max-width:1060px; margin:0 auto; }
+  footer .wrap { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:16px; padding:0 clamp(18px,4vw,36px); }
+  footer .brand { font-size:16px; }
+  footer .meta { font-family:var(--mono); font-size:12.5px; color:var(--faint); }
+  footer a { color:var(--muted); text-decoration:none; font-size:14px; }
+  footer a:hover { color:var(--ink); }
+  @media(max-width:700px) { .navlinks .hide { display:none; } }
+</style>
+</head>
+<body>
+<nav>
+  <a href="/" class="brand">voxtty<span class="cursor">.</span></a>
+  <div class="navlinks">
+    <a href="/blog/" class="active">Blog</a>
+    <a href="/#pricing" class="hide">Pricing</a>
+    <a class="ghbtn" href="https://github.com/PominausGH/voxtty">GitHub ↗</a>
+  </div>
+</nav>
+
+<div class="wrap">
+  <div class="breadcrumb"><a href="/blog/">Blog</a> / Comparisons</div>
+  <span class="tag">Comparisons</span>
+  <h1>The Real Cost of Subscription Dictation Apps for Heavy Users</h1>
+  <div class="meta">
+    <span>28 August 2026</span>
+    <span>4 min read</span>
+  </div>
+
+  <div class="body">
+    <p>Most cloud dictation tools bill by the minute or by the word, and that model punishes exactly the people who benefit most from dictation: writers drafting for hours, support staff on back-to-back calls, students transcribing lectures. A $15/month tier that feels reasonable for occasional voice memos turns into an overage bill once you're dictating four or five hours a day. The other cost — your audio sitting on a third-party server — doesn't show up on the invoice at all.</p>
+
+<h2>Why per-minute pricing punishes heavy users</h2>
+<p>Metered pricing works fine for light use. Send a few voice notes a week and you'll never hit a cap. But dictation tools attract exactly the opposite user: someone trying to replace typing outright, for hours at a stretch, every working day.</p>
+<p>Do the arithmetic. Three hours of dictation a day, five days a week, is roughly 60 hours a month. At even a modest per-minute rate, that's thousands of minutes of billed audio — and most consumer dictation subscriptions cap included minutes well below that, pushing heavy users into overage tiers or forcing an upgrade to a "professional" plan priced for teams, not individuals.</p>
+<p>The second cost is less visible. Free or cheap cloud dictation tools often fund themselves by processing your voice data — sometimes retaining audio to improve their models, sometimes bundling transcripts into broader data-collection terms you skimmed past during signup. You're not paying nothing; you're paying with a recording of your voice, your dictated emails, your draft manuscripts, sitting on infrastructure you don't control.</p>
+
+<h2>What a local, unmetered alternative actually looks like</h2>
+<p>The alternative to metered cloud STT is on-device transcription: software that runs a speech-to-text model on your own machine instead of shipping audio to an API. There's no per-minute counter because there's no server call to bill for — the audio never leaves your hardware.</p>
+<p><a href="https://voxtty.com">Try Voxtty free</a> if you want to see this mechanically: it's a Linux tool that runs as a systemd user service, listens for Alt+D, and transcribes speech locally with faster-whisper — an optimized runtime for OpenAI's Whisper models. Voice activity detection trims silence so it's not burning CPU cycles on dead air, and the transcribed text gets typed directly into whatever application has focus via <code>ydotool</code>. No account, no minutes tracked, no audio upload.</p>
+<p>There's an optional cleanup step that strips filler words ("um," "so," "like") from the transcript. It's opt-in and off by default, and even when enabled it sends only the text — never audio — to the Claude API. That's a meaningfully different privacy boundary than a cloud STT service: a few sentences of already-transcribed text is a smaller, less sensitive payload than a raw audio stream of your voice.</p>
+<p>For someone dictating professionally, the maths flips entirely. There's no monthly meter to watch, no overage anxiety before a long writing session, and no recurring subscription to justify against a shrinking freelance budget or a support team's software line item.</p>
+
+<h2>Where local dictation falls short</h2>
+<p>None of this makes on-device transcription strictly better — it makes different tradeoffs. Top-tier cloud STT services generally still edge out local Whisper models on raw accuracy, particularly with heavy accents, technical jargon, or noisy environments like an open-plan office or a call center floor. If your work involves dense medical or legal terminology, a cloud model fine-tuned for that domain may genuinely transcribe better than a general-purpose local one.</p>
+<p>Local transcription also needs a machine capable of running the model in real time — larger Whisper models are more accurate but slower, so there's a real tradeoff between transcription quality and dictation speed on modest hardware. And tools like Voxtty that rely on <code>ydotool</code> for typing are Wayland/X11-dependent and Linux-specific; there's no equivalent workflow if you're locked into macOS or Windows for other reasons.</p>
+<p>Cost isn't zero either, just restructured: it's electricity and the CPU/GPU cycles your machine already has, not a subscription line item. For anyone dictating a handful of minutes a week, that tradeoff barely matters. For someone doing it for hours daily, it's the difference between a bill that scales with usage and one that doesn't.</p>
+
+<h2>One thing to do today</h2>
+<p>Add up how many hours a week you actually dictate, then check your current tool's pricing page for its per-minute or per-word rate at that volume — most heavy users have never actually done this multiplication. If the number is uncomfortable, spend ten minutes dictating a single paragraph through a local alternative and compare the accuracy against what you're used to before deciding whether the tradeoff is worth it.</p>
+
+    <div class="cta">
+      <h3>Try Voxtty free</h3>
+      <p>Local-first voice dictation for Linux. Press Alt+D, speak, and your words land in whatever app has focus — nothing leaves your machine.</p>
+      <a href="https://voxtty.com" class="btn">Try Voxtty free →</a>
+    </div>
+
+    <div style="margin-top:56px;padding-top:40px;border-top:1px solid rgba(128,128,128,.25)"><h3 style="font-size:1.1rem;font-weight:700;margin-bottom:20px">Related Articles</h3><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px"><a href="https://voxtty.com/blog/voxtty-vs-windows-voice-access-macos-dictation-linux/" style="display:block;padding:18px;border:1px solid rgba(128,128,128,.25);border-radius:12px;text-decoration:none;color:inherit"><span style="font-size:.75rem;font-weight:600;color:#e11d48;text-transform:uppercase;letter-spacing:.03em">Comparisons</span><div style="font-weight:700;margin-top:6px;line-height:1.35">How Does Linux Voice Dictation Compare to Windows and macOS?</div></a><a href="https://voxtty.com/blog/local-voice-dictation-vs-cloud-tools/" style="display:block;padding:18px;border:1px solid rgba(128,128,128,.25);border-radius:12px;text-decoration:none;color:inherit"><span style="font-size:.75rem;font-weight:600;color:#e11d48;text-transform:uppercase;letter-spacing:.03em">Comparisons</span><div style="font-weight:700;margin-top:6px;line-height:1.35">Does Local Voice Dictation Work as Well as Cloud Tools?</div></a><a href="https://voxtty.com/blog/whisper-accuracy-code-comments-commit-messages/" style="display:block;padding:18px;border:1px solid rgba(128,128,128,.25);border-radius:12px;text-decoration:none;color:inherit"><span style="font-size:.75rem;font-weight:600;color:#e11d48;text-transform:uppercase;letter-spacing:.03em">Dictation</span><div style="font-weight:700;margin-top:6px;line-height:1.35">How Accurate Is Whisper for Code Comments and Commit Messages?</div></a><a href="https://voxtty.com/blog/is-it-safe-to-dictate-passwords-sensitive-info/" style="display:block;padding:18px;border:1px solid rgba(128,128,128,.25);border-radius:12px;text-decoration:none;color:inherit"><span style="font-size:.75rem;font-weight:600;color:#e11d48;text-transform:uppercase;letter-spacing:.03em">Privacy</span><div style="font-weight:700;margin-top:6px;line-height:1.35">Is It Safe to Dictate Passwords Out Loud on Linux?</div></a></div></div>
+
+    <a href="/blog/" class="back-link">← Back to blog</a>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <div class="brand">voxtty<span class="cursor">.</span></div>
+    <a href="https://github.com/PominausGH/voxtty">GitHub ↗</a>
+    <a href="/privacy.html">Privacy</a>
+    <span class="meta">local-first · linux-native · open-core</span>
+  </div>
+</footer>
+</body>
+</html>

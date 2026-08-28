@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://analytics.daintytrading.com; connect-src 'self' https://analytics.daintytrading.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'">
+<title>How Accurate Is Whisper for Code Comments and Commit Messages? | Voxtty</title>
+<meta name="description" content="Whisper transcribes natural-language commit messages and comments well, but stumbles on camelCase, variable names, and symbols — here's the practical split.">
+<link rel="canonical" href="https://voxtty.com/blog/whisper-accuracy-code-comments-commit-messages/">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎙️</text></svg>">
+<meta property="og:type" content="article">
+<meta property="og:title" content="How Accurate Is Whisper for Code Comments and Commit Messages?">
+<meta property="og:description" content="Whisper transcribes natural-language commit messages and comments well, but stumbles on camelCase, variable names, and symbols — here's the practical split.">
+<meta property="og:url" content="https://voxtty.com/blog/whisper-accuracy-code-comments-commit-messages/">
+<meta property="article:published_time" content="2026-08-28">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "How Accurate Is Whisper for Code Comments and Commit Messages?",
+  "description": "Whisper transcribes natural-language commit messages and comments well, but stumbles on camelCase, variable names, and symbols — here's the practical split.",
+  "url": "https://voxtty.com/blog/whisper-accuracy-code-comments-commit-messages/",
+  "datePublished": "2026-08-28",
+  "author": { "@type": "Organization", "name": "Voxtty", "url": "https://voxtty.com" },
+  "publisher": { "@type": "Organization", "name": "Voxtty", "url": "https://voxtty.com" }
+}
+</script>
+<style>
+  :root {
+    --ground:#0B0E14; --surface:#12161F; --surface-2:#1A202B;
+    --ink:#E9EDF3; --muted:#9BA7B6; --faint:#8892A2; --border:#232B38;
+    --accent:#FF6A5A; --accent-ink:#FF8578; --accent-soft:#2A1613;
+    --teal:#43B8B2;
+    --mono:ui-monospace,"SF Mono","JetBrains Mono","Fira Code",Menlo,Consolas,monospace;
+    --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --shadow:0 2px 6px rgba(0,0,0,.3), 0 20px 50px rgba(0,0,0,.4);
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --ground:#F2F4F7; --surface:#FFFFFF; --surface-2:#F9FAFB;
+      --ink:#14181F; --muted:#57616E; --faint:#66707E; --border:#E2E6EC;
+      --accent:#DE4E3B; --accent-ink:#B63C2C; --accent-soft:#FBE6E1;
+      --teal:#0E7C7B;
+      --shadow:0 1px 2px rgba(20,30,45,.05), 0 16px 40px rgba(20,30,45,.09);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:#0B0E14; --surface:#12161F; --surface-2:#1A202B;
+    --ink:#E9EDF3; --muted:#9BA7B6; --faint:#8892A2; --border:#232B38;
+    --accent:#FF6A5A; --accent-ink:#FF8578; --accent-soft:#2A1613; --teal:#43B8B2;
+    --shadow:0 2px 6px rgba(0,0,0,.3), 0 20px 50px rgba(0,0,0,.4);
+  }
+  :root[data-theme="light"] {
+    --ground:#F2F4F7; --surface:#FFFFFF; --surface-2:#F9FAFB;
+    --ink:#14181F; --muted:#57616E; --faint:#66707E; --border:#E2E6EC;
+    --accent:#DE4E3B; --accent-ink:#B63C2C; --accent-soft:#FBE6E1; --teal:#0E7C7B;
+    --shadow:0 1px 2px rgba(20,30,45,.05), 0 16px 40px rgba(20,30,45,.09);
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--ground); color:var(--ink); font-family:var(--sans);
+    line-height:1.6; -webkit-font-smoothing:antialiased; }
+  a { color:inherit; }
+  .wrap { max-width:760px; margin:0 auto; padding:0 clamp(18px,4vw,36px); }
+  nav { display:flex; align-items:center; justify-content:space-between; padding:20px 0;
+    border-bottom:1px solid var(--border); max-width:1060px; margin:0 auto; padding-left:clamp(18px,4vw,36px); padding-right:clamp(18px,4vw,36px); }
+  .brand { font-family:var(--mono); font-size:19px; font-weight:600; letter-spacing:-.01em; text-decoration:none; color:var(--ink); }
+  .brand .cursor { display:inline-block; width:.6ch; color:var(--accent); }
+  .navlinks { display:flex; gap:22px; align-items:center; font-size:14px; }
+  .navlinks a { color:var(--muted); text-decoration:none; }
+  .navlinks a:hover, .navlinks a.active { color:var(--ink); }
+  .ghbtn { font-family:var(--mono); font-size:13px; border:1px solid var(--border);
+    border-radius:8px; padding:7px 13px; color:var(--ink); text-decoration:none; background:var(--surface); }
+  .breadcrumb { font-family:var(--mono); font-size:12.5px; color:var(--faint); margin:40px 0 18px; }
+  .breadcrumb a { color:var(--faint); }
+  .breadcrumb a:hover { color:var(--muted); }
+  .tag { display:inline-block; font-family:var(--mono); font-size:12px; color:var(--accent-ink);
+    background:var(--accent-soft); border-radius:999px; padding:4px 11px; margin-bottom:16px; }
+  h1 { font-size:clamp(28px,4.6vw,42px); line-height:1.1; letter-spacing:-.03em; margin:0 0 18px;
+    font-weight:700; text-wrap:balance; }
+  .meta { font-family:var(--mono); font-size:13px; color:var(--faint); display:flex; gap:16px; margin-bottom:44px; }
+  .body { padding-bottom:64px; }
+  .body p { color:var(--muted); font-size:17px; line-height:1.8; margin:0 0 22px; }
+  .body h2 { font-size:1.4rem; font-weight:700; letter-spacing:-.02em; margin:42px 0 14px; color:var(--ink); }
+  .body h3 { font-size:1.1rem; font-weight:600; margin:28px 0 10px; color:var(--ink); }
+  .body ul, .body ol { margin:0 0 22px 22px; color:var(--muted); font-size:17px; line-height:1.8; }
+  .body li { margin-bottom:8px; }
+  .body strong { color:var(--ink); font-weight:600; }
+  .body a { color:var(--accent-ink); }
+  .body a:hover { text-decoration:underline; }
+  .body blockquote { border-left:3px solid var(--accent); padding-left:20px; margin:28px 0; color:var(--faint); font-style:italic; }
+  .body code { font-family:var(--mono); font-size:.9em; background:var(--surface-2); padding:2px 6px; border-radius:4px; }
+  .cta { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:28px;
+    margin:16px 0 48px; box-shadow:var(--shadow); }
+  .cta h3 { margin:0 0 8px; font-size:18px; }
+  .cta p { color:var(--muted); margin:0 0 18px; font-size:15px; }
+  .btn { font-family:var(--mono); font-size:14px; font-weight:600; text-decoration:none;
+    border-radius:10px; padding:11px 18px; display:inline-flex; align-items:center; gap:9px;
+    background:#CE3E2B; color:#fff; }
+  .btn:hover { filter:brightness(1.06); }
+  .back-link { display:inline-flex; align-items:center; gap:6px; color:var(--faint); font-family:var(--mono);
+    font-size:13px; text-decoration:none; }
+  .back-link:hover { color:var(--muted); }
+  footer { border-top:1px solid var(--border); padding:36px 0 56px; max-width:1060px; margin:0 auto; }
+  footer .wrap { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:16px; padding:0 clamp(18px,4vw,36px); }
+  footer .brand { font-size:16px; }
+  footer .meta { font-family:var(--mono); font-size:12.5px; color:var(--faint); }
+  footer a { color:var(--muted); text-decoration:none; font-size:14px; }
+  footer a:hover { color:var(--ink); }
+  @media(max-width:700px) { .navlinks .hide { display:none; } }
+</style>
+</head>
+<body>
+<nav>
+  <a href="/" class="brand">voxtty<span class="cursor">.</span></a>
+  <div class="navlinks">
+    <a href="/blog/" class="active">Blog</a>
+    <a href="/#pricing" class="hide">Pricing</a>
+    <a class="ghbtn" href="https://github.com/PominausGH/voxtty">GitHub ↗</a>
+  </div>
+</nav>
+
+<div class="wrap">
+  <div class="breadcrumb"><a href="/blog/">Blog</a> / Dictation</div>
+  <span class="tag">Dictation</span>
+  <h1>How Accurate Is Whisper for Code Comments and Commit Messages?</h1>
+  <div class="meta">
+    <span>28 August 2026</span>
+    <span>4 min read</span>
+  </div>
+
+  <div class="body">
+    <p>Whisper is genuinely good at the prose parts of a developer's day — commit messages, code comments, PR descriptions, changelog entries — because those are ordinary sentences. It's bad at the parts that aren't sentences: <code>camelCaseIdentifiers</code>, snake_case variables, and punctuation-heavy syntax like <code>&&</code> or <code>=&gt;</code>. The practical fix isn't a better model, it's a better split: dictate the English, type the code.</p>
+
+<h2>Why this split matters</h2>
+<p>A lot of a developer's typing isn't code at all. Commit messages, docstrings, code review comments, Jira tickets, Slack updates about what a function does — that's all natural language, and it's a meaningful chunk of daily keystrokes. Typing it out character by character is where RSI and hand fatigue accumulate, not in writing <code>if (x > 0)</code>.</p>
+<p>There's also a context-switching cost that's easy to underrate. Stopping mid-flow to carefully type a three-sentence commit message pulls you out of the code you were just reasoning about. Speaking it while you're still looking at the diff keeps you in that headspace. And if you're dictating anything that touches proprietary code — a comment describing a business rule, a commit message referencing an internal system name — sending that audio to a cloud STT API means it's sitting on someone else's server, transcribed by infrastructure you don't control and can't audit.</p>
+
+<h2>Where Whisper is actually strong</h2>
+<p>For clear, unaccented speech, Whisper's mid-size models handle full sentences about as well as most commercial STT for everyday vocabulary. Practically, that means:</p>
+<p><strong>Commit messages.</strong> "Fix null pointer exception when the user session expires before the token refresh completes" transcribes cleanly, because every word is a real English word Whisper has seen millions of times.</p>
+<p><strong>Code comments explaining intent.</strong> "This retries three times with exponential backoff because the upstream API rate-limits aggressively" — same story. Natural language, no invented tokens.</p>
+<p><strong>PR descriptions and changelog entries.</strong> Longer, more structured prose is actually easier for Whisper than short technical fragments, because it has more context to disambiguate homophones and awkward phrasing.</p>
+<p>This is the workflow Voxtty is built around: press Alt+D, say the sentence, and it gets typed into whatever has focus — the commit message editor, a comment block, a PR description field — via faster-whisper running entirely on-device. Voice activity detection trims the silence at the start and end so you don't get a stray fragment, and an optional offline cleanup pass strips filler words like "um" and "so yeah" before the text lands. None of the audio leaves the machine; if you opt into the AI cleanup step, only the transcript text goes to the Claude API, never the audio itself.</p>
+
+<h2>Where it breaks down</h2>
+<p>Ask Whisper to transcribe <code>getUserByIdAsync</code> and you'll get "get user by id async" as four separate words, correctly spelled but with none of the camelCase boundaries or capitalization a real identifier needs. It has no way to know you wanted a single token — it's a speech model, not a code model, and it has no concept of your codebase's naming conventions.</p>
+<p>Symbols are worse. Saying "arrow function" doesn't reliably produce <code>=&gt;</code>, and reading out a regex or a generic type signature character-by-character is slower and less reliable than just typing it. Whisper also struggles more with strong accents, heavy background noise, and dense technical jargon than with plain conversational speech — this is a general limitation of on-device Whisper models, not something specific to code dictation, but it compounds when you're also asking it to guess at an unusual variable name.</p>
+<p>The workaround is simple and doesn't require perfect transcription: dictate the comment or commit message as a full sentence, then type identifiers, symbols, and syntax the normal way. Don't try to dictate a whole line of code — dictate the explanation of what the code does, and keep the keyboard for the code itself.</p>
+
+<h2>One thing to try today</h2>
+<p>Next time you write a commit message, dictate it instead of typing it — just the message, not the diff. <a href="https://voxtty.com">Try Voxtty free</a> and see how close the first draft gets to what you'd have typed; if it's clean, extend the habit to comments and PR descriptions next.</p>
+
+    <div class="cta">
+      <h3>Try Voxtty free</h3>
+      <p>Local-first voice dictation for Linux. Press Alt+D, speak, and your words land in whatever app has focus — nothing leaves your machine.</p>
+      <a href="https://voxtty.com" class="btn">Try Voxtty free →</a>
+    </div>
+
+    <div style="margin-top:56px;padding-top:40px;border-top:1px solid rgba(128,128,128,.25)"><h3 style="font-size:1.1rem;font-weight:700;margin-bottom:20px">Related Articles</h3><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px"><a href="https://voxtty.com/blog/voice-activity-detection-dictation/" style="display:block;padding:18px;border:1px solid rgba(128,128,128,.25);border-radius:12px;text-decoration:none;color:inherit"><span style="font-size:.75rem;font-weight:600;color:#e11d48;text-transform:uppercase;letter-spacing:.03em">Dictation</span><div style="font-weight:700;margin-top:6px;line-height:1.35">What Is Voice Activity Detection, and Why Dictation Needs It</div></a><a href="https://voxtty.com/blog/is-it-safe-to-dictate-passwords-sensitive-info/" style="display:block;padding:18px;border:1px solid rgba(128,128,128,.25);border-radius:12px;text-decoration:none;color:inherit"><span style="font-size:.75rem;font-weight:600;color:#e11d48;text-transform:uppercase;letter-spacing:.03em">Privacy</span><div style="font-weight:700;margin-top:6px;line-height:1.35">Is It Safe to Dictate Passwords Out Loud on Linux?</div></a><a href="https://voxtty.com/blog/voice-dictation-rsi-typing-fatigue/" style="display:block;padding:18px;border:1px solid rgba(128,128,128,.25);border-radius:12px;text-decoration:none;color:inherit"><span style="font-size:.75rem;font-weight:600;color:#e11d48;text-transform:uppercase;letter-spacing:.03em">Productivity</span><div style="font-weight:700;margin-top:6px;line-height:1.35">Voice Dictation for RSI and Typing Fatigue</div></a><a href="https://voxtty.com/blog/voxtty-vs-windows-voice-access-macos-dictation-linux/" style="display:block;padding:18px;border:1px solid rgba(128,128,128,.25);border-radius:12px;text-decoration:none;color:inherit"><span style="font-size:.75rem;font-weight:600;color:#e11d48;text-transform:uppercase;letter-spacing:.03em">Comparisons</span><div style="font-weight:700;margin-top:6px;line-height:1.35">How Does Linux Voice Dictation Compare to Windows and macOS?</div></a></div></div>
+
+    <a href="/blog/" class="back-link">← Back to blog</a>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <div class="brand">voxtty<span class="cursor">.</span></div>
+    <a href="https://github.com/PominausGH/voxtty">GitHub ↗</a>
+    <a href="/privacy.html">Privacy</a>
+    <span class="meta">local-first · linux-native · open-core</span>
+  </div>
+</footer>
+</body>
+</html>

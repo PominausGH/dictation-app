@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://analytics.daintytrading.com; connect-src 'self' https://analytics.daintytrading.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'">
+<title>Can You Dictate in Other Languages on Linux? Yes, With Limits | Voxtty</title>
+<meta name="description" content="Whisper transcribes ~99 languages out of the box on Linux — the real constraints are model size, low-resource languages, and code-switching.">
+<link rel="canonical" href="https://voxtty.com/blog/dictate-other-languages-linux-whisper/">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎙️</text></svg>">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Can You Dictate in Other Languages on Linux? Yes, With Limits">
+<meta property="og:description" content="Whisper transcribes ~99 languages out of the box on Linux — the real constraints are model size, low-resource languages, and code-switching.">
+<meta property="og:url" content="https://voxtty.com/blog/dictate-other-languages-linux-whisper/">
+<meta property="article:published_time" content="2026-08-28">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Can You Dictate in Other Languages on Linux? Yes, With Limits",
+  "description": "Whisper transcribes ~99 languages out of the box on Linux — the real constraints are model size, low-resource languages, and code-switching.",
+  "url": "https://voxtty.com/blog/dictate-other-languages-linux-whisper/",
+  "datePublished": "2026-08-28",
+  "author": { "@type": "Organization", "name": "Voxtty", "url": "https://voxtty.com" },
+  "publisher": { "@type": "Organization", "name": "Voxtty", "url": "https://voxtty.com" }
+}
+</script>
+<style>
+  :root {
+    --ground:#0B0E14; --surface:#12161F; --surface-2:#1A202B;
+    --ink:#E9EDF3; --muted:#9BA7B6; --faint:#8892A2; --border:#232B38;
+    --accent:#FF6A5A; --accent-ink:#FF8578; --accent-soft:#2A1613;
+    --teal:#43B8B2;
+    --mono:ui-monospace,"SF Mono","JetBrains Mono","Fira Code",Menlo,Consolas,monospace;
+    --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --shadow:0 2px 6px rgba(0,0,0,.3), 0 20px 50px rgba(0,0,0,.4);
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --ground:#F2F4F7; --surface:#FFFFFF; --surface-2:#F9FAFB;
+      --ink:#14181F; --muted:#57616E; --faint:#66707E; --border:#E2E6EC;
+      --accent:#DE4E3B; --accent-ink:#B63C2C; --accent-soft:#FBE6E1;
+      --teal:#0E7C7B;
+      --shadow:0 1px 2px rgba(20,30,45,.05), 0 16px 40px rgba(20,30,45,.09);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:#0B0E14; --surface:#12161F; --surface-2:#1A202B;
+    --ink:#E9EDF3; --muted:#9BA7B6; --faint:#8892A2; --border:#232B38;
+    --accent:#FF6A5A; --accent-ink:#FF8578; --accent-soft:#2A1613; --teal:#43B8B2;
+    --shadow:0 2px 6px rgba(0,0,0,.3), 0 20px 50px rgba(0,0,0,.4);
+  }
+  :root[data-theme="light"] {
+    --ground:#F2F4F7; --surface:#FFFFFF; --surface-2:#F9FAFB;
+    --ink:#14181F; --muted:#57616E; --faint:#66707E; --border:#E2E6EC;
+    --accent:#DE4E3B; --accent-ink:#B63C2C; --accent-soft:#FBE6E1; --teal:#0E7C7B;
+    --shadow:0 1px 2px rgba(20,30,45,.05), 0 16px 40px rgba(20,30,45,.09);
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--ground); color:var(--ink); font-family:var(--sans);
+    line-height:1.6; -webkit-font-smoothing:antialiased; }
+  a { color:inherit; }
+  .wrap { max-width:760px; margin:0 auto; padding:0 clamp(18px,4vw,36px); }
+  nav { display:flex; align-items:center; justify-content:space-between; padding:20px 0;
+    border-bottom:1px solid var(--border); max-width:1060px; margin:0 auto; padding-left:clamp(18px,4vw,36px); padding-right:clamp(18px,4vw,36px); }
+  .brand { font-family:var(--mono); font-size:19px; font-weight:600; letter-spacing:-.01em; text-decoration:none; color:var(--ink); }
+  .brand .cursor { display:inline-block; width:.6ch; color:var(--accent); }
+  .navlinks { display:flex; gap:22px; align-items:center; font-size:14px; }
+  .navlinks a { color:var(--muted); text-decoration:none; }
+  .navlinks a:hover, .navlinks a.active { color:var(--ink); }
+  .ghbtn { font-family:var(--mono); font-size:13px; border:1px solid var(--border);
+    border-radius:8px; padding:7px 13px; color:var(--ink); text-decoration:none; background:var(--surface); }
+  .breadcrumb { font-family:var(--mono); font-size:12.5px; color:var(--faint); margin:40px 0 18px; }
+  .breadcrumb a { color:var(--faint); }
+  .breadcrumb a:hover { color:var(--muted); }
+  .tag { display:inline-block; font-family:var(--mono); font-size:12px; color:var(--accent-ink);
+    background:var(--accent-soft); border-radius:999px; padding:4px 11px; margin-bottom:16px; }
+  h1 { font-size:clamp(28px,4.6vw,42px); line-height:1.1; letter-spacing:-.03em; margin:0 0 18px;
+    font-weight:700; text-wrap:balance; }
+  .meta { font-family:var(--mono); font-size:13px; color:var(--faint); display:flex; gap:16px; margin-bottom:44px; }
+  .body { padding-bottom:64px; }
+  .body p { color:var(--muted); font-size:17px; line-height:1.8; margin:0 0 22px; }
+  .body h2 { font-size:1.4rem; font-weight:700; letter-spacing:-.02em; margin:42px 0 14px; color:var(--ink); }
+  .body h3 { font-size:1.1rem; font-weight:600; margin:28px 0 10px; color:var(--ink); }
+  .body ul, .body ol { margin:0 0 22px 22px; color:var(--muted); font-size:17px; line-height:1.8; }
+  .body li { margin-bottom:8px; }
+  .body strong { color:var(--ink); font-weight:600; }
+  .body a { color:var(--accent-ink); }
+  .body a:hover { text-decoration:underline; }
+  .body blockquote { border-left:3px solid var(--accent); padding-left:20px; margin:28px 0; color:var(--faint); font-style:italic; }
+  .body code { font-family:var(--mono); font-size:.9em; background:var(--surface-2); padding:2px 6px; border-radius:4px; }
+  .cta { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:28px;
+    margin:16px 0 48px; box-shadow:var(--shadow); }
+  .cta h3 { margin:0 0 8px; font-size:18px; }
+  .cta p { color:var(--muted); margin:0 0 18px; font-size:15px; }
+  .btn { font-family:var(--mono); font-size:14px; font-weight:600; text-decoration:none;
+    border-radius:10px; padding:11px 18px; display:inline-flex; align-items:center; gap:9px;
+    background:#CE3E2B; color:#fff; }
+  .btn:hover { filter:brightness(1.06); }
+  .back-link { display:inline-flex; align-items:center; gap:6px; color:var(--faint); font-family:var(--mono);
+    font-size:13px; text-decoration:none; }
+  .back-link:hover { color:var(--muted); }
+  footer { border-top:1px solid var(--border); padding:36px 0 56px; max-width:1060px; margin:0 auto; }
+  footer .wrap { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:16px; padding:0 clamp(18px,4vw,36px); }
+  footer .brand { font-size:16px; }
+  footer .meta { font-family:var(--mono); font-size:12.5px; color:var(--faint); }
+  footer a { color:var(--muted); text-decoration:none; font-size:14px; }
+  footer a:hover { color:var(--ink); }
+  @media(max-width:700px) { .navlinks .hide { display:none; } }
+</style>
+</head>
+<body>
+<nav>
+  <a href="/" class="brand">voxtty<span class="cursor">.</span></a>
+  <div class="navlinks">
+    <a href="/blog/" class="active">Blog</a>
+    <a href="/#pricing" class="hide">Pricing</a>
+    <a class="ghbtn" href="https://github.com/PominausGH/voxtty">GitHub ↗</a>
+  </div>
+</nav>
+
+<div class="wrap">
+  <div class="breadcrumb"><a href="/blog/">Blog</a> / Dictation</div>
+  <span class="tag">Dictation</span>
+  <h1>Can You Dictate in Other Languages on Linux? Yes, With Limits</h1>
+  <div class="meta">
+    <span>28 August 2026</span>
+    <span>4 min read</span>
+  </div>
+
+  <div class="body">
+    <p>Yes — Whisper, the model behind most local dictation tools on Linux, was trained on roughly 99 languages and handles non-English speech natively, no separate language pack required. The real limitations aren't about whether a language is supported at all; they're about model size (smaller models degrade faster in non-English languages than in English) and code-switching, where Whisper reliably struggles when a speaker mixes two languages in one sentence.</p>
+
+<h2>Why language support is more than a checkbox</h2>
+<p>Cloud dictation services often advertise broad language lists, but the accuracy behind that list is uneven, and you rarely get to see the breakdown before you commit to a subscription. Worse, if you're dictating in a language other than English, that audio is still leaving your machine and landing on someone else's server — and for many non-English speakers, that's audio tied more directly to a specific ethnic, regional, or national identity than generic English speech would be.</p>
+<p>There's also a practical failure mode: cloud STT quality for lower-resource languages is often the first thing degraded when a vendor cuts corners on training data, and it's the first regional coverage dropped if a service restructures. An on-device model doesn't change tomorrow because a vendor deprioritized your language this quarter. What you get today, benchmarked on your own speech, is what you keep.</p>
+
+<h2>Model size is the real lever, not language selection</h2>
+<p>Whisper ships in several sizes — tiny, base, small, medium, large — and English accuracy holds up reasonably well even on the smaller ones. Non-English accuracy does not scale the same way. The gap between a small model and a medium or large model is much wider for, say, Spanish, German, or Mandarin than it is for English, because English dominates Whisper's training data by a wide margin.</p>
+<p>Practically: if you're dictating in a high-resource language — Spanish, French, German, Portuguese, Chinese, Japanese — a medium-sized model gets you most of the way to usable accuracy. For lower-resource languages — many Southeast Asian, African, or regional European languages with less training data available — you'll want the large model if your hardware can run it, and you should still expect more correction passes than an English speaker sees on the same tier.</p>
+<p>This is exactly the kind of tradeoff <a href="https://voxtty.com">Voxtty</a> is built around exposing rather than hiding. It runs faster-whisper on-device, triggered with Alt+D, and uses voice activity detection to know when you've started and stopped talking — but it doesn't pretend every model size performs the same across languages. You pick the model based on your language and hardware, not a marketing tier. <a href="https://voxtty.com">Try Voxtty free</a> if you want to benchmark this against your own accent and vocabulary rather than trust a spec sheet.</p>
+<p>Optional cleanup runs the same way regardless of language: if you opt into it, the already-transcribed text — not audio — gets sent to the Claude API to strip filler words. For non-English dictation this matters more than it sounds, since filler-word patterns ("eh," "este," "あの") differ by language and a cleanup pass tuned only for English filler words will miss them.</p>
+
+<h2>Where it breaks: code-switching and low-resource languages</h2>
+<p>Code-switching — dropping into a second language mid-sentence, common among multilingual speakers — is a documented weak point across Whisper model sizes, not just the small ones. The model has to commit to a language mode per segment, and when you switch languages inside a sentence, it will often either mistranscribe the second language phonetically in the first language's script, or silently drop words. There's no reliable fix for this yet at the model level; it's a known limitation, not a configuration issue.</p>
+<p>Low-resource languages carry a second penalty beyond model size: even the large model's absolute ceiling is lower for a language with limited training data than for one with abundant data. Background noise and strong regional accents compound this — the same accent that costs you a few percentage points of accuracy in English can cost noticeably more in a language where the model has seen less variation during training. If your language is tonal, has significant regional dialect variation, or uses a non-Latin script, budget more time for correction.</p>
+
+<h2>One thing to do today</h2>
+<p>If you regularly speak a language other than English, don't guess at which model size you need — test it. Dictate the same two or three sentences in your target language using the small, medium, and large model, and see where the accuracy curve actually bends for your voice and vocabulary. That fifteen-minute test tells you more than any language-support list will.</p>
+
+    <div class="cta">
+      <h3>Try Voxtty free</h3>
+      <p>Local-first voice dictation for Linux. Press Alt+D, speak, and your words land in whatever app has focus — nothing leaves your machine.</p>
+      <a href="https://voxtty.com" class="btn">Try Voxtty free →</a>
+    </div>
+
+    <div style="margin-top:56px;padding-top:40px;border-top:1px solid rgba(128,128,128,.25)"><h3 style="font-size:1.1rem;font-weight:700;margin-bottom:20px">Related Articles</h3><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px"><a href="https://voxtty.com/blog/how-long-to-get-good-at-voice-dictation/" style="display:block;padding:18px;border:1px solid rgba(128,128,128,.25);border-radius:12px;text-decoration:none;color:inherit"><span style="font-size:.75rem;font-weight:600;color:#e11d48;text-transform:uppercase;letter-spacing:.03em">Dictation</span><div style="font-weight:700;margin-top:6px;line-height:1.35">How Long Does It Take to Get Good at Voice Dictation?</div></a><a href="https://voxtty.com/blog/whisper-accuracy-code-comments-commit-messages/" style="display:block;padding:18px;border:1px solid rgba(128,128,128,.25);border-radius:12px;text-decoration:none;color:inherit"><span style="font-size:.75rem;font-weight:600;color:#e11d48;text-transform:uppercase;letter-spacing:.03em">Dictation</span><div style="font-weight:700;margin-top:6px;line-height:1.35">How Accurate Is Whisper for Code Comments and Commit Messages?</div></a><a href="https://voxtty.com/blog/voice-activity-detection-dictation/" style="display:block;padding:18px;border:1px solid rgba(128,128,128,.25);border-radius:12px;text-decoration:none;color:inherit"><span style="font-size:.75rem;font-weight:600;color:#e11d48;text-transform:uppercase;letter-spacing:.03em">Dictation</span><div style="font-weight:700;margin-top:6px;line-height:1.35">What Is Voice Activity Detection, and Why Dictation Needs It</div></a><a href="https://voxtty.com/blog/why-voice-dictation-mishears-you-fix/" style="display:block;padding:18px;border:1px solid rgba(128,128,128,.25);border-radius:12px;text-decoration:none;color:inherit"><span style="font-size:.75rem;font-weight:600;color:#e11d48;text-transform:uppercase;letter-spacing:.03em">Guides</span><div style="font-weight:700;margin-top:6px;line-height:1.35">Why Does My Voice Dictation Tool Keep Mishearing Me?</div></a></div></div>
+
+    <a href="/blog/" class="back-link">← Back to blog</a>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <div class="brand">voxtty<span class="cursor">.</span></div>
+    <a href="https://github.com/PominausGH/voxtty">GitHub ↗</a>
+    <a href="/privacy.html">Privacy</a>
+    <span class="meta">local-first · linux-native · open-core</span>
+  </div>
+</footer>
+</body>
+</html>
