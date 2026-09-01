@@ -26,7 +26,6 @@ from faster_whisper import WhisperModel
 from PIL import Image, ImageDraw
 import pystray
 
-from . import __version__
 from .backends import get_backend
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
@@ -668,32 +667,6 @@ class VoxttyApp:
 
 
 def main() -> None:
-    import argparse
-
-    parser = argparse.ArgumentParser(
-        prog="voxtty",
-        description="Private, local-first voice dictation. Press Alt+D, speak, and "
-                    "your words are typed into the focused app.",
-    )
-    parser.add_argument("--version", action="version", version=f"voxtty {__version__}")
-    parser.add_argument(
-        "--install-service", action="store_true",
-        help="register Voxtty to start automatically at login, and start it now",
-    )
-    parser.add_argument(
-        "--uninstall-service", action="store_true",
-        help="stop Voxtty and remove the autostart registration",
-    )
-    args = parser.parse_args()
-
-    if args.install_service or args.uninstall_service:
-        backend = get_backend(CFG)
-        ok, msg = (
-            backend.install_service() if args.install_service else backend.uninstall_service()
-        )
-        print(msg)
-        raise SystemExit(0 if ok else 1)
-
     VoxttyApp().run()
 
 

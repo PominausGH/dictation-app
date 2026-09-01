@@ -59,7 +59,7 @@ Source = "https://github.com/PominausGH/voxtty"
 Issues = "https://github.com/PominausGH/voxtty/issues"
 
 [project.scripts]
-voxtty = "voxtty.app:main"
+voxtty = "voxtty.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
