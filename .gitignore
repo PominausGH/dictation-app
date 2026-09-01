@@ -12,3 +12,9 @@ config.json
 # Secrets — never commit API keys
 env
 *.key
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+src/*.egg-info/

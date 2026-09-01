@@ -31,7 +31,9 @@ cd "$(dirname "$0")"
 python3 -m venv venv --system-site-packages
 source venv/bin/activate
 pip install --upgrade pip
-pip install -r requirements.txt
+# Editable install: pulls the dependencies from pyproject.toml and creates the
+# `voxtty` console script the systemd unit runs, while still tracking the checkout.
+pip install -e .
 
 # openwakeword's tflite-runtime dependency has no current-Python wheels, so a
 # plain install fails; pull it in separately with --no-deps + its real deps

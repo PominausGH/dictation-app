@@ -26,7 +26,7 @@ from faster_whisper import WhisperModel
 from PIL import Image, ImageDraw
 import pystray
 
-from backends import get_backend
+from .backends import get_backend
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
 
@@ -34,6 +34,7 @@ APP_DIR = Path(__file__).parent
 DATA_DIR = Path(platformdirs.user_data_dir("voxtty", appauthor=False))
 CONFIG_DIR = Path(platformdirs.user_config_dir("voxtty", appauthor=False))
 DATA_DIR.mkdir(parents=True, exist_ok=True)
+CONFIG_DIR.mkdir(parents=True, exist_ok=True)
 
 # ── Logging ───────────────────────────────────────────────────────────────────
 
@@ -95,12 +96,21 @@ _DEFAULTS: dict = {
     "word_replacements": {},
 }
 
-CONFIG_PATH = APP_DIR / "config.json"
+# Config lives beside the user's other config, not next to the code — an
+# installed package sits in a read-only site-packages directory.
+CONFIG_PATH = CONFIG_DIR / "config.json"
+# Where config.json lived when Voxtty was run from a git checkout. Migrated
+# on first run so existing installs keep their tuning.
+_LEGACY_CONFIG_PATH = APP_DIR.parent.parent / "config.json"
 
 def _load_config() -> dict:
     if not CONFIG_PATH.exists():
-        CONFIG_PATH.write_text(json.dumps(_DEFAULTS, indent=2) + "\n")
-        log.info(f"Created default config: {CONFIG_PATH}")
+        if _LEGACY_CONFIG_PATH.exists():
+            CONFIG_PATH.write_text(_LEGACY_CONFIG_PATH.read_text())
+            log.info(f"Migrated config {_LEGACY_CONFIG_PATH} -> {CONFIG_PATH}")
+        else:
+            CONFIG_PATH.write_text(json.dumps(_DEFAULTS, indent=2) + "\n")
+            log.info(f"Created default config: {CONFIG_PATH}")
     cfg = json.loads(CONFIG_PATH.read_text())
     for k, v in _DEFAULTS.items():
         cfg.setdefault(k, v)

@@ -9,7 +9,7 @@ Wants=graphical-session.target
 # gets copied verbatim to every installer's ~/.config/systemd/user/.
 Type=simple
 WorkingDirectory=__VOXTTY_INSTALL_DIR__
-ExecStart=__VOXTTY_INSTALL_DIR__/venv/bin/python __VOXTTY_INSTALL_DIR__/voxtty.py
+ExecStart=__VOXTTY_INSTALL_DIR__/venv/bin/voxtty
 Restart=on-failure
 RestartSec=5
 Environment=DISPLAY=:0

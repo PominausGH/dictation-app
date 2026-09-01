@@ -9,7 +9,7 @@ Wants=graphical-session.target
 # works for whichever user enables it, unlike setup.sh's per-user sed'd copy.
 Type=simple
 WorkingDirectory=/opt/voxtty
-ExecStart=/opt/voxtty/venv/bin/python /opt/voxtty/voxtty.py
+ExecStart=/opt/voxtty/venv/bin/voxtty
 Restart=on-failure
 RestartSec=5
 Environment=DISPLAY=:0
