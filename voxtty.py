@@ -14,7 +14,7 @@ import signal
 import sys
 import threading
 import time
-from collections import deque
+from collections import Counter, deque
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
@@ -57,9 +57,15 @@ _DEFAULTS: dict = {
     "sample_rate": 16000,
     "chunk_duration_ms": 30,
     "silence_threshold": 1.2,
-    "min_speech_frames": 15,
-    "no_speech_prob_threshold": 0.25,
-    "min_rms_energy": 80,
+    "min_speech_frames": 6,
+    "no_speech_prob_threshold": 0.6,
+    "min_rms_energy": 50,
+    # How aggressively WebRTC VAD discards non-speech (0=lenient, 3=strict).
+    # 3 clips soft word onsets; 2 is a better default for dictation.
+    "vad_aggressiveness": 2,
+    # Audio kept in a rolling buffer and prepended to each utterance so the
+    # first syllable (and speech just before the hotkey) is not lost.
+    "preroll_ms": 400,
     "wake_word": "hey_jarvis",
     "wake_word_threshold": 0.75,
     "wake_word_cooldown_chunks": 200,
@@ -136,6 +142,11 @@ class VoxttyApp:
         log.info("Loading Whisper model...")
         self.whisper = WhisperModel(CFG["whisper_model"], device="cpu", compute_type="int8")
         log.info("Whisper model loaded.")
+
+        # Whisper runs on its own thread: transcribing on the audio thread stalls
+        # stream.read() and the driver drops everything spoken meanwhile.
+        self.audio_queue: queue.Queue[bytes | None] = queue.Queue()
+        threading.Thread(target=self._transcribe_loop, daemon=True).start()
 
         self.wake_word_model = None
         self._load_wake_word_model()
@@ -314,14 +325,39 @@ class VoxttyApp:
         if not words:
             return True
         filler_ratio = sum(1 for w in words if w in self._FILLER) / len(words)
-        if filler_ratio > 0.6:
+        if len(words) >= 3 and filler_ratio > 0.6:
             return True
         # Reject if more than half the words are the same word repeated
-        from collections import Counter
         top_count = Counter(words).most_common(1)[0][1]
         if len(words) >= 4 and top_count / len(words) >= 0.5:
             return True
         return False
+
+    @staticmethod
+    def _norm(text: str) -> str:
+        return re.sub(r"[^a-z0-9 ]", "", text.lower()).strip()
+
+    def _strip_prompt_echo(self, text: str) -> str:
+        """Whisper often regurgitates initial_prompt verbatim on weak audio."""
+        prompt = (CFG["whisper_initial_prompt"] or "").strip()
+        if not prompt:
+            return text
+        np_, nt = self._norm(prompt), self._norm(text)
+        if not np_:
+            return text
+        if nt == np_:
+            return ""
+        if nt.startswith(np_):
+            # Re-cut the original text just past the echoed prompt.
+            kept, seen = [], 0
+            target = len(np_.split())
+            for word in text.split():
+                if seen < target and self._norm(word):
+                    seen += 1
+                    continue
+                kept.append(word)
+            return " ".join(kept).strip()
+        return text
 
     def _transcribe(self, audio_data: bytes) -> str:
         try:
@@ -337,7 +373,7 @@ class VoxttyApp:
                 for seg in segments
                 if seg.no_speech_prob <= CFG["no_speech_prob_threshold"]
             ]
-            text = " ".join(parts).strip()
+            text = self._strip_prompt_echo(" ".join(parts).strip())
             if not text or all(c in ".,!?;:-'" for c in text):
                 return ""
             if self._is_hallucination(text):
@@ -347,6 +383,21 @@ class VoxttyApp:
         except Exception as e:
             log.error(f"Transcription failed: {e}")
             return ""
+
+    def _transcribe_loop(self) -> None:
+        """Single worker: keeps utterances in order, keeps Whisper off the audio thread."""
+        while True:
+            raw = self.audio_queue.get()
+            if raw is None:
+                break
+            try:
+                text = self._transcribe(raw)
+            except Exception as e:
+                log.error(f"Transcribe worker error: {e}")
+                continue
+            if text:
+                self.type_text(text)
+                log.info(f"Transcribed: {text}")
 
     # ── State ─────────────────────────────────────────────────────────────────
 
@@ -381,7 +432,7 @@ class VoxttyApp:
 
     def _run_audio_stream(self) -> None:
         """One audio session. Raises on error so _audio_loop can reconnect."""
-        vad = webrtcvad.Vad(3)
+        vad = webrtcvad.Vad(int(CFG["vad_aggressiveness"]))
         audio = pyaudio.PyAudio()
         device_index = self._find_input_device(audio)
         stream = audio.open(
@@ -399,8 +450,8 @@ class VoxttyApp:
         min_chunks = int(0.4 * chunks_per_second)
         watchdog_timeout = CFG.get("watchdog_timeout", 30)
 
-        preroll_chunks = int(0.2 * chunks_per_second)
-
+        preroll_len = max(1, int(CFG["preroll_ms"]) // CHUNK_DURATION_MS)
+        preroll: deque[bytes] = deque(maxlen=preroll_len)
         audio_buffer: list[bytes] = []
         preroll: deque[bytes] = deque(maxlen=preroll_chunks)
         silence_chunks = 0
@@ -428,53 +479,46 @@ class VoxttyApp:
                     raise RuntimeError(f"Watchdog: no audio for {watchdog_timeout}s — stream stale")
 
                 if self._check_wake_word(chunk):
-                    audio_buffer.clear()
+                    # Drop the pre-roll too, or the wake phrase itself gets typed.
                     preroll.clear()
+                    audio_buffer = []
                     silence_chunks = 0
                     speech_detected = False
                     speech_frame_count = 0
                     self.toggle_state()
                     continue
 
+                preroll.append(chunk)
+
                 if self.state != "DICTATING":
+                    # Stopped mid-sentence: transcribe what was already captured.
+                    if speech_detected:
+                        self._submit_utterance(audio_buffer, speech_frame_count, min_chunks)
+                        audio_buffer = []
+                        silence_chunks = 0
+                        speech_detected = False
+                        speech_frame_count = 0
                     continue
 
                 is_speech = vad.is_speech(chunk, SAMPLE_RATE)
 
                 if is_speech:
-                    if not speech_detected and preroll:
-                        # VAD lags a frame or two on soft onsets — recover the lead-in
-                        # audio so the first syllable isn't silently dropped.
+                    if not speech_detected:
+                        # Prepend the rolling pre-roll (which already holds `chunk`)
+                        # so the leading syllable is not clipped by VAD latch-on.
                         audio_buffer.extend(preroll)
-                        preroll.clear()
-                    audio_buffer.append(chunk)
+                        speech_detected = True
+                    else:
+                        audio_buffer.append(chunk)
                     silence_chunks = 0
-                    speech_detected = True
                     speech_frame_count += 1
                 elif speech_detected:
                     audio_buffer.append(chunk)
                     silence_chunks += 1
 
                     if silence_chunks >= silence_threshold:
-                        if (
-                            len(audio_buffer) >= min_chunks
-                            and speech_frame_count >= CFG["min_speech_frames"]
-                            and self.state == "DICTATING"
-                        ):
-                            raw = b"".join(audio_buffer)
-                            rms = np.sqrt(np.mean(
-                                np.frombuffer(raw, dtype=np.int16).astype(np.float32) ** 2
-                            ))
-                            if rms >= CFG["min_rms_energy"]:
-                                text = self._transcribe(raw)
-                                if text:
-                                    # Replacements/cleanup/word-count happen in _type_loop
-                                    self.type_text(text)
-                                    log.info(f"Transcribed: {text}")
-                            else:
-                                log.debug(f"Skipped low-energy audio ({rms:.0f} RMS)")
-
-                        audio_buffer.clear()
+                        self._submit_utterance(audio_buffer, speech_frame_count, min_chunks)
+                        audio_buffer = []
                         silence_chunks = 0
                         speech_detected = False
                         speech_frame_count = 0
@@ -484,6 +528,17 @@ class VoxttyApp:
             stream.stop_stream()
             stream.close()
             audio.terminate()
+
+    def _submit_utterance(self, chunks: list[bytes], speech_frames: int, min_chunks: int) -> None:
+        """Gate an utterance and hand it to the transcribe worker. Never blocks."""
+        if len(chunks) < min_chunks or speech_frames < CFG["min_speech_frames"]:
+            return
+        raw = b"".join(chunks)
+        rms = np.sqrt(np.mean(np.frombuffer(raw, dtype=np.int16).astype(np.float32) ** 2))
+        if rms < CFG["min_rms_energy"]:
+            log.debug(f"Skipped low-energy audio ({rms:.0f} RMS)")
+            return
+        self.audio_queue.put(raw)
 
     def _audio_loop(self) -> None:
         while not self.shutdown_flag:
@@ -548,6 +603,7 @@ class VoxttyApp:
     def _quit(self) -> None:
         log.info("Quit requested.")
         self.shutdown_flag = True
+        self.audio_queue.put(None)
         self.text_queue.put(None)
         if sys.platform.startswith("linux"):
             Path("/tmp/voxtty.pid").unlink(missing_ok=True)
