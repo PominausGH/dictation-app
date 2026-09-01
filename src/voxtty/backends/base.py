@@ -27,6 +27,14 @@ class Backend(abc.ABC):
         (polled, not pushed).
         """
 
+    def install_service(self) -> tuple[bool, str]:
+        """Register Voxtty to start at login. Returns (ok, message). Never raises."""
+        return False, "Autostart setup is not supported on this platform."
+
+    def uninstall_service(self) -> tuple[bool, str]:
+        """Undo install_service(). Returns (ok, message). Never raises."""
+        return False, "Autostart setup is not supported on this platform."
+
     def attach_tray(self, icon) -> None:
         """Optional hook, called once after the tray icon exists, before tray.run().
 

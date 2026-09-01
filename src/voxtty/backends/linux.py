@@ -3,9 +3,12 @@
 import logging
 import os
 import selectors
+import shutil
 import subprocess
+import sys
 import threading
 import time
+from pathlib import Path
 from typing import Callable, Optional
 
 import evdev
@@ -14,6 +17,26 @@ from evdev import ecodes
 from .base import Backend
 
 log = logging.getLogger("voxtty.linux")
+
+
+_UNIT_TEMPLATE = """[Unit]
+Description=Voxtty - Voice dictation with Alt+D hotkey
+After=graphical-session.target sound.target
+Wants=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart={exec_path}
+Restart=on-failure
+RestartSec=5
+Environment=DISPLAY=:0
+Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/{uid}/bus
+Environment=YDOTOOL_SOCKET=/run/user/{uid}/.ydotool_socket
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=graphical-session.target
+"""
 
 
 class LinuxBackend(Backend):
@@ -34,6 +57,76 @@ class LinuxBackend(Backend):
             return True, None
         except (subprocess.CalledProcessError, FileNotFoundError):
             return False, "ydotool unavailable — run: sudo ydotoold &"
+
+    # ── Autostart (systemd user service) ─────────────────────────────────────
+
+    _UNIT_NAME = "voxtty.service"
+
+    @staticmethod
+    def _unit_path() -> Path:
+        return Path.home() / ".config" / "systemd" / "user" / LinuxBackend._UNIT_NAME
+
+    @staticmethod
+    def _console_script() -> Optional[Path]:
+        """Locate the installed `voxtty` entry point.
+
+        sys.executable's directory is checked first: under pipx that is the
+        managed venv holding the real script, while `voxtty` on PATH is only a
+        symlink into it.
+        """
+        candidate = Path(sys.executable).parent / "voxtty"
+        if candidate.exists():
+            return candidate
+        found = shutil.which("voxtty")
+        return Path(found) if found else None
+
+    @staticmethod
+    def _systemctl(*args: str) -> tuple[bool, str]:
+        try:
+            r = subprocess.run(
+                ["systemctl", "--user", *args], capture_output=True, text=True, timeout=30
+            )
+            return r.returncode == 0, (r.stderr or r.stdout).strip()
+        except FileNotFoundError:
+            return False, "systemctl not found — this system does not use systemd."
+        except subprocess.SubprocessError as e:
+            return False, f"systemctl failed: {e}"
+
+    def install_service(self) -> tuple[bool, str]:
+        exec_path = self._console_script()
+        if exec_path is None:
+            return False, (
+                "Could not find the 'voxtty' console script. Install the package "
+                "first (pipx install voxtty), then re-run --install-service."
+            )
+        unit = self._unit_path()
+        try:
+            unit.parent.mkdir(parents=True, exist_ok=True)
+            unit.write_text(_UNIT_TEMPLATE.format(exec_path=exec_path, uid=os.getuid()))
+        except OSError as e:
+            return False, f"Could not write {unit}: {e}"
+
+        ok, msg = self._systemctl("daemon-reload")
+        if not ok:
+            return False, msg
+        ok, msg = self._systemctl("enable", "--now", self._UNIT_NAME)
+        if not ok:
+            return False, f"Unit written to {unit}, but enabling it failed: {msg}"
+
+        note = ""
+        if not self.check_ready()[0]:
+            note = "\n  Note: ydotool is not ready yet — install it and start ydotoold."
+        return True, f"Installed and started {unit}{note}"
+
+    def uninstall_service(self) -> tuple[bool, str]:
+        unit = self._unit_path()
+        self._systemctl("disable", "--now", self._UNIT_NAME)
+        try:
+            unit.unlink(missing_ok=True)
+        except OSError as e:
+            return False, f"Could not remove {unit}: {e}"
+        self._systemctl("daemon-reload")
+        return True, f"Removed {unit}"
 
     # ── Notifications ────────────────────────────────────────────────────────
 
