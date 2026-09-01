@@ -59,10 +59,12 @@ _DEFAULTS: dict = {
     "silence_threshold": 1.2,
     "min_speech_frames": 6,
     "no_speech_prob_threshold": 0.6,
-    "min_rms_energy": 50,
+    "min_rms_energy": 80,
     # How aggressively WebRTC VAD discards non-speech (0=lenient, 3=strict).
-    # 3 clips soft word onsets; 2 is a better default for dictation.
-    "vad_aggressiveness": 2,
+    # Stay strict: the pre-roll below already recovers the soft word onsets
+    # that a lower setting would buy, without letting room noise in. Drop to
+    # 2 only on a quiet mic where speech is still being missed.
+    "vad_aggressiveness": 3,
     # Audio kept in a rolling buffer and prepended to each utterance so the
     # first syllable (and speech just before the hotkey) is not lost.
     "preroll_ms": 400,
