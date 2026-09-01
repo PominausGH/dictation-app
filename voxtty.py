@@ -459,7 +459,6 @@ class VoxttyApp:
         preroll_len = max(1, int(CFG["preroll_ms"]) // CHUNK_DURATION_MS)
         preroll: deque[bytes] = deque(maxlen=preroll_len)
         audio_buffer: list[bytes] = []
-        preroll: deque[bytes] = deque(maxlen=preroll_chunks)
         silence_chunks = 0
         speech_detected = False
         speech_frame_count = 0
@@ -528,8 +527,6 @@ class VoxttyApp:
                         silence_chunks = 0
                         speech_detected = False
                         speech_frame_count = 0
-                else:
-                    preroll.append(chunk)
         finally:
             stream.stop_stream()
             stream.close()
