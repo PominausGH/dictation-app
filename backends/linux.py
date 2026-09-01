@@ -17,10 +17,14 @@ log = logging.getLogger("voxtty.linux")
 
 
 class LinuxBackend(Backend):
-    def __init__(self) -> None:
+    def __init__(self, key_delay_ms: int = 0) -> None:
         if not os.environ.get("YDOTOOL_SOCKET"):
             os.environ["YDOTOOL_SOCKET"] = f"/run/user/{os.getuid()}/.ydotool_socket"
         self._alt_pressed = False
+        # 0 is right for local apps. Remote sessions (RDP/VNC/Citrix via
+        # Remmina, etc.) forward each keystroke over the network and drop or
+        # reorder zero-delay bursts, so they need a few ms of spacing.
+        self.key_delay_ms = max(0, int(key_delay_ms))
 
     # ── Readiness ────────────────────────────────────────────────────────────
 
@@ -49,7 +53,7 @@ class LinuxBackend(Backend):
             return
         try:
             subprocess.run(
-                ["ydotool", "type", "--key-delay", "0", "--", text],
+                ["ydotool", "type", "--key-delay", str(self.key_delay_ms), "--", text],
                 check=True, capture_output=True,
             )
         except subprocess.CalledProcessError as e:

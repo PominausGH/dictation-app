@@ -71,6 +71,10 @@ _DEFAULTS: dict = {
     "wake_word": "hey_jarvis",
     "wake_word_threshold": 0.75,
     "wake_word_cooldown_chunks": 200,
+    # Milliseconds between injected keystrokes. 0 is right for local apps;
+    # remote-desktop sessions (RDP/VNC/Citrix) usually need ~10 or they drop
+    # and reorder characters.
+    "type_key_delay_ms": 0,
     "audio_reconnect_delay": 3,
     "watchdog_timeout": 30,
     # ── AI cleanup (opt-in) ──────────────────────────────────────────────
@@ -130,7 +134,7 @@ class VoxttyApp:
         self.word_count = 0
         self.tray: pystray.Icon | None = None
         self.wake_word_cooldown = 0
-        self.backend = get_backend()
+        self.backend = get_backend(CFG)
 
         # AI cleanup state (lazy-initialized on first use)
         self.cleanup_enabled = CFG["cleanup_enabled"]
