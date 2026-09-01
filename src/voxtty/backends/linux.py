@@ -92,6 +92,35 @@ class LinuxBackend(Backend):
         except subprocess.SubprocessError as e:
             return False, f"systemctl failed: {e}"
 
+    @staticmethod
+    def _preflight() -> list[str]:
+        """Problems that leave Voxtty installed but non-functional.
+
+        Not fatal — the service is still worth installing, since both of these
+        are fixed outside Voxtty and take effect on the next start.
+        """
+        problems = []
+        try:
+            import grp
+
+            in_input = "input" in {grp.getgrgid(g).gr_name for g in os.getgroups()}
+        except Exception:
+            in_input = True  # Cannot determine it; do not cry wolf.
+        if not in_input:
+            problems.append(
+                "You are not in the 'input' group, so the Alt+D hotkey cannot read\n"
+                "  the keyboard. Fix:  sudo usermod -aG input $USER\n"
+                "  then log out and back in for it to take effect."
+            )
+
+        socket = os.environ.get("YDOTOOL_SOCKET", "")
+        if socket and not Path(socket).exists():
+            problems.append(
+                "ydotoold is not running, so Voxtty cannot type. Fix:\n"
+                "  sudo systemctl enable --now ydotoold"
+            )
+        return problems
+
     def install_service(self) -> tuple[bool, str]:
         exec_path = self._console_script()
         if exec_path is None:
@@ -113,10 +142,12 @@ class LinuxBackend(Backend):
         if not ok:
             return False, f"Unit written to {unit}, but enabling it failed: {msg}"
 
-        note = ""
+        msg = f"Installed and started {unit}"
         if not self.check_ready()[0]:
-            note = "\n  Note: ydotool is not ready yet — install it and start ydotoold."
-        return True, f"Installed and started {unit}{note}"
+            msg += "\n\nWARNING: ydotool is not installed — Voxtty cannot type without it."
+        for problem in self._preflight():
+            msg += f"\n\nWARNING: {problem}"
+        return True, msg
 
     def uninstall_service(self) -> tuple[bool, str]:
         unit = self._unit_path()

@@ -42,16 +42,32 @@ you. If you would rather manage it yourself, three of Voxtty's dependencies
 time, so you need a compiler and the relevant headers **first**:
 
 ```bash
-# Debian / Ubuntu
-sudo apt install gcc python3-dev portaudio19-dev ydotool
-# Fedora
-sudo dnf install gcc python3-devel portaudio-devel ydotool
+# 1. System packages. The compiler and headers are required because evdev,
+#    PyAudio and webrtcvad publish no wheels and are built at install time.
+#    Debian / Ubuntu:
+sudo apt install gcc python3-dev portaudio19-dev ydotool \
+                 python3-gi python3-gi-cairo gir1.2-gtk-3.0 libnotify-bin
+#    Fedora:
+#    sudo dnf install gcc python3-devel portaudio-devel ydotool \
+#                     python3-gobject gtk3 libnotify
 
+# 2. Start the ydotool daemon — without it Voxtty cannot type.
+sudo systemctl enable --now ydotoold
+
+# 3. Join the input group — without it the Alt+D hotkey cannot read the keyboard.
+sudo usermod -aG input "$USER"
+
+# 4. Install and register the service.
 pipx install voxtty
-voxtty --install-service      # register the systemd user service and start it
+voxtty --install-service
 ```
 
-Without those system packages `pipx install voxtty` fails with compiler errors.
+**Log out and back in** for the `input` group to take effect, then press
+**Alt+D** anywhere.
+
+All four steps matter: skip 1 and the install fails with compiler errors; skip 2
+and nothing is typed; skip 3 and the hotkey never fires. `voxtty
+--install-service` warns you about 2 and 3 if it detects them missing.
 
 ### Arch Linux
 
