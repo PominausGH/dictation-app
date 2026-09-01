@@ -34,6 +34,38 @@ cd voxtty
 
 **Log out and back in** after setup for the `input` group change to take effect. Then press **Alt+D** anywhere to start dictating.
 
+### With pipx
+
+`setup.sh` is the recommended path because it installs the system packages for
+you. If you would rather manage it yourself, three of Voxtty's dependencies
+(`evdev`, `PyAudio`, `webrtcvad`) publish no wheels and are compiled at install
+time, so you need a compiler and the relevant headers **first**:
+
+```bash
+# Debian / Ubuntu
+sudo apt install gcc python3-dev portaudio19-dev ydotool
+# Fedora
+sudo dnf install gcc python3-devel portaudio-devel ydotool
+
+pipx install voxtty
+voxtty --install-service      # register the systemd user service and start it
+```
+
+Without those system packages `pipx install voxtty` fails with compiler errors.
+
+### Arch Linux
+
+A `voxtty-git` PKGBUILD lives in [`packaging/aur/`](packaging/aur/). It is not
+on the AUR yet — Arch has suspended new AUR account registration while dealing
+with a wave of malicious package uploads — so build it directly for now:
+
+```bash
+git clone https://github.com/PominausGH/voxtty.git
+cd voxtty/packaging/aur
+makepkg -si
+systemctl --user enable --now voxtty.service
+```
+
 ## Installation (Windows)
 
 ```powershell
