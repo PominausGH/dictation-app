@@ -1,3 +1,3 @@
 """Voxtty — private, local-first voice dictation for Linux and Windows."""
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
